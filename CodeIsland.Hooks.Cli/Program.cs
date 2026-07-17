@@ -17,23 +17,33 @@ if (command == "self-test")
     var home = Path.Combine(root, "home");
     var bin = Path.Combine(root, "bin");
     var backups = Path.Combine(root, "backups");
+    var bridge = Path.Combine(root, "codeisland-bridge.exe");
     Directory.CreateDirectory(home);
     Directory.CreateDirectory(bin);
     try
     {
         var tool = KnownTools.All.Single(value => value.DisplayName == "Codex");
         File.WriteAllText(Path.Combine(bin, "codex.cmd"), "@echo off");
+        File.WriteAllText(bridge, "bridge");
         var configPath = Path.Combine(home, tool.ConfigPaths[0]);
         Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
         File.WriteAllText(configPath, "{\"model\":\"gpt-5\"}");
 
-        var manager = new HookManager(new ToolDetector(home, bin), new HookFileStore(backups));
+        var store = new HookFileStore(backups);
+        var manager = new HookManager(new ToolDetector(home, bin, store), store);
         Require(!manager.GetStatus(tool).HookInstalled, "Hook must initially be absent.");
-        Require(manager.Install(tool).IsHealthy, "Install must produce a healthy status.");
-        Require(manager.Install(tool).IsHealthy, "Repeated install must be idempotent.");
+        Require(manager.Install(tool, bridge).IsHealthy, "Install must produce a healthy status.");
+        var registration = store.Read(configPath, tool.HookMarker);
+        Require(registration?.Command.Contains(Path.GetFullPath(bridge), StringComparison.Ordinal) == true,
+            "Registration must invoke the selected Bridge executable.");
+        Require(registration?.Events.SequenceEqual(tool.Events) == true, "Registration must contain all tool events.");
+        Require(registration?.ProtocolVersion == HookRegistration.CurrentProtocolVersion,
+            "Registration must contain the current protocol version.");
+        Require(manager.Install(tool, bridge).IsHealthy, "Repeated install must be idempotent.");
         Require(Directory.GetFiles(backups).Length == 1, "Idempotent install must create one backup only.");
         Require(!manager.Uninstall(tool).HookInstalled, "Uninstall must remove the marker.");
         Require(File.ReadAllText(configPath).Contains("gpt-5", StringComparison.Ordinal), "User configuration must be preserved.");
+        Require(!File.ReadAllText(configPath).Contains("codeIsland", StringComparison.Ordinal), "Uninstall must remove only CodeIsland registration.");
         Console.WriteLine("SELF-TEST PASS: detect, backup, install, idempotency, health and uninstall verified.");
         return 0;
     }

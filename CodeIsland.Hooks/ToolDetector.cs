@@ -4,12 +4,14 @@ public sealed class ToolDetector
 {
     private readonly string _userHome;
     private readonly string[] _pathEntries;
+    private readonly HookFileStore _store;
 
-    public ToolDetector(string? userHome = null, string? path = null)
+    public ToolDetector(string? userHome = null, string? path = null, HookFileStore? store = null)
     {
         _userHome = userHome ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         _pathEntries = (path ?? Environment.GetEnvironmentVariable("PATH") ?? string.Empty)
             .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        _store = store ?? new HookFileStore();
     }
 
     public ToolInstallation Detect(HookTool tool)
@@ -20,13 +22,17 @@ public sealed class ToolDetector
             .ToArray();
         var config = candidates.FirstOrDefault(File.Exists) ?? candidates.FirstOrDefault();
         var configExists = config is not null && File.Exists(config);
-        var markerPresent = configExists && File.ReadAllText(config!).Contains(tool.HookMarker, StringComparison.Ordinal);
+        var registration = configExists ? _store.Read(config!, tool.HookMarker) : null;
+        var markerPresent = registration is not null;
+        var currentVersion = registration?.ProtocolVersion == HookRegistration.CurrentProtocolVersion;
         var problem = executable is null
             ? "Executable not found on PATH."
             : !configExists
                 ? "No supported user configuration file found."
-                : markerPresent ? null : "Hook marker is not installed.";
-        return new ToolInstallation(tool, executable, config, markerPresent, executable is not null && configExists && markerPresent, problem);
+                : !markerPresent ? "Hook registration is not installed."
+                : !currentVersion ? "Hook protocol version is outdated." : null;
+        return new ToolInstallation(tool, executable, config, markerPresent,
+            executable is not null && configExists && markerPresent && currentVersion, problem);
     }
 
     public IReadOnlyList<ToolInstallation> DetectAll() => KnownTools.All.Select(Detect).ToArray();

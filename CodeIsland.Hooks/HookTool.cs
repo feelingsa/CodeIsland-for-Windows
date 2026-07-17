@@ -7,7 +7,8 @@ public sealed record HookTool(
     string DisplayName,
     IReadOnlyList<string> ExecutableNames,
     IReadOnlyList<string> ConfigPaths,
-    string HookMarker);
+    string HookMarker,
+    IReadOnlyList<string> Events);
 
 public sealed record ToolInstallation(
     HookTool Tool,
@@ -22,10 +23,13 @@ public static class KnownTools
     public static IReadOnlyList<HookTool> All { get; } =
     [
         new(AgentKind.Claude, "Claude Code", ["claude.exe", "claude.cmd", "claude"],
-            [@".claude.json", @".claude\settings.json"], "codeisland-claude"),
+            [@".claude.json", @".claude\settings.json"], "codeisland-claude",
+            ["SessionStart", "PreToolUse", "PostToolUse", "PermissionRequest", "Stop"]),
         new(AgentKind.Codex, "Codex", ["codex.exe", "codex.cmd", "codex"],
-            [@".codex\config.json", @".codex\hooks.json"], "codeisland-codex"),
+            [@".codex\config.json", @".codex\hooks.json"], "codeisland-codex",
+            ["session_start", "tool_use", "permission_request", "session_end"]),
         new(AgentKind.Gemini, "Gemini CLI", ["gemini.exe", "gemini.cmd", "gemini"],
-            [@".gemini\settings.json", @".gemini\hooks.json"], "codeisland-gemini")
+            [@".gemini\settings.json", @".gemini\hooks.json"], "codeisland-gemini",
+            ["SessionStart", "BeforeTool", "AfterTool", "Notification", "SessionEnd"])
     ];
 }
