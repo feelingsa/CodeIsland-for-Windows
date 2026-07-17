@@ -23,8 +23,8 @@ namespace CodeIsland.Windows;
 public partial class MainWindow : Window
 {
     private bool _expanded = true;
-    private const double ExpandedWidth = 560;
-    private const double ExpandedHeight = 160;
+    private const double ExpandedWidth = 780;
+    private const double ExpandedHeight = 650;
     private const double CollapsedWidth = 260;
     private const double CollapsedHeight = 64;
     private readonly DesktopSessionStore _sessions;
@@ -112,6 +112,24 @@ public partial class MainWindow : Window
         if (!activated) activated = _workspaceLauncher.TryLaunch(snapshot.Agent, snapshot.TerminalKind, snapshot.WorkingDirectory);
         if (!activated) ToolTip = "No matching terminal or IDE was found, and no fallback launcher is available.";
     }
+
+    private void OnJumpPillClick(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: SessionSnapshot snapshot }) ActivateSession(snapshot);
+        e.Handled = true;
+    }
+
+    private void ActivateSession(SessionSnapshot snapshot)
+    {
+        var activated = _terminalActivator.TryActivate(snapshot.ProcessId, snapshot.WorkingDirectory);
+        if (!activated) activated = _workspaceLauncher.TryLaunch(snapshot.Agent, snapshot.TerminalKind, snapshot.WorkingDirectory);
+        if (!activated) ToolTip = "No matching terminal or IDE was found, and no fallback launcher is available.";
+    }
+
+    private void OnSettingsClick(object sender, RoutedEventArgs e) =>
+        ((App)System.Windows.Application.Current).OpenSettings();
+
+    private void OnExitClick(object sender, RoutedEventArgs e) => System.Windows.Application.Current.Shutdown();
 
     private void PositionPanel()
     {

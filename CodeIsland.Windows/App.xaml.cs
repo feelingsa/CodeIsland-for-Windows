@@ -125,7 +125,7 @@ public partial class App : Application
         }
     }
 
-    private void OpenSettings()
+    internal void OpenSettings()
     {
         if (_settingsWindow is { IsVisible: true })
         {
