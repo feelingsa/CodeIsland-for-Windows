@@ -12,11 +12,13 @@ public sealed class HookManager : IHookManager
 {
     private readonly ToolDetector _detector;
     private readonly HookFileStore _store;
+    private readonly NativeHookInstaller _native;
 
     public HookManager(ToolDetector detector, HookFileStore store)
     {
         _detector = detector;
         _store = store;
+        _native = new NativeHookInstaller(store);
     }
 
     public ToolInstallation GetStatus(HookTool tool) => _detector.Detect(tool);
@@ -29,7 +31,7 @@ public sealed class HookManager : IHookManager
         if (status.ConfigPath is null)
             throw new InvalidOperationException($"No supported configuration path for {tool.DisplayName}.");
         if (!File.Exists(bridgePath)) throw new FileNotFoundException("CodeIsland Bridge was not found.", bridgePath);
-        _store.Install(status.ConfigPath, HookRegistration.Create(tool, bridgePath));
+        _native.Install(status.ConfigPath, tool, HookRegistration.Create(tool, bridgePath));
         return _detector.Detect(tool);
     }
 
@@ -38,7 +40,7 @@ public sealed class HookManager : IHookManager
     public ToolInstallation Uninstall(HookTool tool)
     {
         var status = _detector.Detect(tool);
-        if (status.ConfigPath is not null) _store.Remove(status.ConfigPath, tool.HookMarker);
+        if (status.ConfigPath is not null) _native.Uninstall(status.ConfigPath, tool, tool.HookMarker);
         return _detector.Detect(tool);
     }
 }

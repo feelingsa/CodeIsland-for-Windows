@@ -12,7 +12,7 @@ public sealed record HookRegistration(
 
     public static HookRegistration Create(HookTool tool, string bridgePath) => new(
         tool.HookMarker,
-        $"\"{Path.GetFullPath(bridgePath)}\" send --stdin",
+        $"\"{Path.GetFullPath(bridgePath)}\" send --stdin --registration {tool.HookMarker}",
         tool.Events,
         CurrentProtocolVersion,
         CurrentInstallerVersion);

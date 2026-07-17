@@ -1,4 +1,5 @@
 using CodeIsland.Hooks;
+using System.Text.Json.Nodes;
 
 var command = args.FirstOrDefault()?.ToLowerInvariant() ?? "status";
 if (command == "status")
@@ -39,11 +40,31 @@ if (command == "self-test")
         Require(registration?.Events.SequenceEqual(tool.Events) == true, "Registration must contain all tool events.");
         Require(registration?.ProtocolVersion == HookRegistration.CurrentProtocolVersion,
             "Registration must contain the current protocol version.");
+        var codexRoot = JsonNode.Parse(File.ReadAllText(configPath))!.AsObject();
+        var codexEntry = codexRoot["hooks"]?[tool.Events[0]]?[0]?.AsObject();
+        Require(codexEntry is not null && !codexEntry.ContainsKey("matcher"),
+            "Codex native hooks must use the matcher-free event-map format.");
+        Require(codexEntry?["hooks"]?[0]?["command"]?.GetValue<string>().Contains(tool.HookMarker) == true,
+            "Codex native hook command must contain its registration id.");
         Require(manager.Install(tool, bridge).IsHealthy, "Repeated install must be idempotent.");
         Require(Directory.GetFiles(backups).Length == 1, "Idempotent install must create one backup only.");
         Require(!manager.Uninstall(tool).HookInstalled, "Uninstall must remove the marker.");
         Require(File.ReadAllText(configPath).Contains("gpt-5", StringComparison.Ordinal), "User configuration must be preserved.");
         Require(!File.ReadAllText(configPath).Contains("codeIsland", StringComparison.Ordinal), "Uninstall must remove only CodeIsland registration.");
+
+        var claude = KnownTools.All.Single(value => value.DisplayName == "Claude Code");
+        File.WriteAllText(Path.Combine(bin, "claude.cmd"), "@echo off");
+        var claudeConfig = Path.Combine(home, claude.ConfigPaths[0]);
+        Directory.CreateDirectory(Path.GetDirectoryName(claudeConfig)!);
+        File.WriteAllText(claudeConfig, "{\"theme\":\"dark\"}");
+        Require(manager.Install(claude, bridge).IsHealthy, "Claude install must be healthy.");
+        var claudeRoot = JsonNode.Parse(File.ReadAllText(claudeConfig))!.AsObject();
+        var claudeEntry = claudeRoot["hooks"]?[claude.Events[0]]?[0]?.AsObject();
+        Require(claudeEntry?["matcher"]?.GetValue<string>() == "*",
+            "Claude native hooks must contain a matcher.");
+        Require(claudeEntry?["hooks"]?[0]?["type"]?.GetValue<string>() == "command",
+            "Claude native hooks must contain a command hook.");
+        Require(!manager.Uninstall(claude).HookInstalled, "Claude uninstall must remove registration.");
         Console.WriteLine("SELF-TEST PASS: detect, backup, install, idempotency, health and uninstall verified.");
         return 0;
     }
