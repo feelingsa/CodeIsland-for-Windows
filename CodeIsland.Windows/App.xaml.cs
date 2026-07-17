@@ -6,6 +6,7 @@ using System.Threading;
 using System.Windows.Forms;
 using CodeIsland.Ipc;
 using CodeIsland.Core;
+using System.Windows.Threading;
 using Application = System.Windows.Application;
 
 namespace CodeIsland.Windows;
@@ -18,6 +19,7 @@ public partial class App : Application
     private PipeServer? _pipeServer;
     private CancellationTokenSource? _pipeStop;
     private Task? _pipeTask;
+    private DispatcherTimer? _cleanupTimer;
     public DesktopSessionStore Sessions { get; } = new();
 
     protected override void OnStartup(StartupEventArgs e)
@@ -32,6 +34,9 @@ public partial class App : Application
         StartPipeServer();
         _window = new MainWindow(Sessions);
         _window.Show();
+        _cleanupTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
+        _cleanupTimer.Tick += (_, _) => Sessions.RemoveExpired(DateTimeOffset.UtcNow.AddMinutes(-30));
+        _cleanupTimer.Start();
         _tray = new NotifyIcon
         {
             Icon = System.Drawing.SystemIcons.Application,
@@ -81,6 +86,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         _pipeStop?.Cancel();
+        _cleanupTimer?.Stop();
         if (_pipeTask is not null)
         {
             try { _pipeTask.GetAwaiter().GetResult(); }

@@ -61,6 +61,8 @@ public sealed class SessionStateMachine
             .ToArray()
             .Count(key => _sessions.Remove(key));
 
+    public bool Remove(string sessionId) => _sessions.Remove(sessionId);
+
     private static SessionState ResolveState(AgentEventType type, SessionState? current) => type switch
     {
         AgentEventType.SessionStart => SessionState.Running,

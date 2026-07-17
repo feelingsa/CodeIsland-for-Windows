@@ -83,6 +83,22 @@ public sealed class DesktopSessionStore : INotifyPropertyChanged
         return removed;
     }
 
+    public bool RemoveSession(string sessionId)
+    {
+        if (!_machine.Remove(sessionId)) return false;
+        var visible = Sessions.FirstOrDefault(value => value.SessionId == sessionId);
+        if (visible is not null) Sessions.Remove(visible);
+        foreach (var eventId in _pending.Where(pair => pair.Value.SessionId == sessionId)
+                     .Select(pair => pair.Key).ToArray())
+        {
+            if (_pending.Remove(eventId, out var pending)) pending.Completion.TrySetCanceled();
+        }
+        OnPropertyChanged(nameof(SessionCount));
+        OnPropertyChanged(nameof(HasSessions));
+        OnPropertyChanged(nameof(IsIdle));
+        return true;
+    }
+
     private void ReplaceVisible(SessionSnapshot snapshot)
     {
         var index = Sessions.ToList().FindIndex(value => value.SessionId == snapshot.SessionId);

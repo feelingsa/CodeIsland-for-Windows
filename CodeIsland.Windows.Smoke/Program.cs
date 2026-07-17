@@ -44,6 +44,8 @@ Require(bounded.Sessions.Count == 2, "Visible sessions must respect the configur
 Require(bounded.EventHistory.Count == 2, "Event history must respect the configured maximum.");
 var removed = bounded.RemoveExpired(DateTimeOffset.UtcNow.AddMinutes(-1.5));
 Require(removed == 2, "Expired session cleanup must remove sessions older than the cutoff.");
+Require(bounded.RemoveSession("bounded-1"), "Visible session must support explicit removal.");
+Require(bounded.SessionCount == 0, "Explicit removal must update the visible collection.");
 Console.WriteLine("SMOKE PASS: state recovery, bounded history, visible limit and expiry cleanup verified.");
 return 0;
 

@@ -33,10 +33,11 @@
                             <DataTemplate>
                                 <Grid Margin="0,5,0,0">
                                     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-                                    <Grid.ColumnDefinitions><ColumnDefinition Width="80"/><ColumnDefinition Width="110"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="80"/><ColumnDefinition Width="110"/><ColumnDefinition Width="*"/><ColumnDefinition Width="28"/></Grid.ColumnDefinitions>
                                     <TextBlock Text="{Binding Agent}" Foreground="#FF8BE9FD"/>
                                     <TextBlock Grid.Column="1" Text="{Binding State}" Foreground="#FFF4C86A"/>
                                     <TextBlock Grid.Column="2" Text="{Binding LastMessage}" Foreground="#FFD5DAE4" TextTrimming="CharacterEllipsis"/>
+                                    <Button Grid.Column="3" Content="×" Tag="{Binding SessionId}" Click="OnCloseSessionClick" ToolTip="关闭会话" Width="24" Height="22" Padding="0"/>
                                     <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="0,7,0,0">
                                         <StackPanel.Style>
                                             <Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/>

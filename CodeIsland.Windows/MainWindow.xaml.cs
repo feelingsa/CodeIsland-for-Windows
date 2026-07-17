@@ -60,6 +60,11 @@ public partial class MainWindow : Window
         if (_sessions.Resolve(eventId, UserAction.Answer, answer)) _answerDrafts.Remove(eventId);
     }
 
+    private void OnCloseSessionClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is WpfButton { Tag: string sessionId }) _sessions.RemoveSession(sessionId);
+    }
+
     private void PositionPanel()
     {
         var workArea = SystemParameters.WorkArea;
