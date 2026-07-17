@@ -34,7 +34,9 @@ public sealed class SessionStateMachine
             state is SessionState.WaitingForPermission or SessionState.WaitingForAnswer
                 ? agentEvent.EventId
                 : null,
-            agentEvent.Type == AgentEventType.Error ? agentEvent.Text : current?.Error);
+            agentEvent.Type == AgentEventType.Error ? agentEvent.Text : current?.Error,
+            agentEvent.ProcessId ?? current?.ProcessId,
+            agentEvent.TerminalKind ?? current?.TerminalKind);
 
         return true;
     }

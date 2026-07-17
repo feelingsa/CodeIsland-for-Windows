@@ -11,4 +11,6 @@ public sealed record SessionSnapshot(
     string? LastMessage,
     string? ActiveTool,
     string? PendingEventId,
-    string? Error);
+    string? Error,
+    int? ProcessId,
+    string? TerminalKind);

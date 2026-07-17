@@ -25,4 +25,6 @@ public sealed record AgentEvent(
     string? Title = null,
     string? Text = null,
     string? ToolName = null,
-    JsonElement? Payload = null);
+    JsonElement? Payload = null,
+    int? ProcessId = null,
+    string? TerminalKind = null);

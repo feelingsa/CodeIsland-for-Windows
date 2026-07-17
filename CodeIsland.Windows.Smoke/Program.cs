@@ -126,6 +126,18 @@ Require(!HotKeyBinding.TryParse("Ctrl+Shift", out _), "Shortcut without a key mu
 var normalizedSettings = new AppSettings { ToggleShortcut = "Ctrl+Shift+I", ApproveShortcut = "Ctrl+Shift+I" }.Validate();
 Require(normalizedSettings.ApproveShortcut == "Ctrl+Shift+I", "Settings validation must preserve valid shortcut syntax.");
 Console.WriteLine("SMOKE PASS: shortcut parsing and normalization verified.");
+Require(WindowMatcher.TitleMatchesWorkingDirectory("PowerShell - CodexStatus", @"E:\Demo\CodexStatus"),
+    "Window title must match the working-directory leaf name.");
+Require(!WindowMatcher.TitleMatchesWorkingDirectory("PowerShell - Other", @"E:\Demo\CodexStatus"),
+    "Unrelated window title must not match.");
+var processStore = new DesktopSessionStore();
+processStore.Apply(new AgentEvent("process-1", "process-session", AgentKind.Codex,
+    AgentEventType.SessionStart, DateTimeOffset.UtcNow, @"E:\Demo\CodexStatus", ProcessId: 4321,
+    TerminalKind: "windows-terminal"));
+Require(processStore.Sessions.Single().ProcessId == 4321
+        && processStore.Sessions.Single().TerminalKind == "windows-terminal",
+    "Process and terminal metadata must propagate to the session snapshot.");
+Console.WriteLine("SMOKE PASS: window matching and process metadata propagation verified.");
 return 0;
 
 static void Require(bool condition, string message)

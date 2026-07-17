@@ -32,6 +32,7 @@ public partial class MainWindow : Window
     private GlobalHotKeyManager? _hotKeys;
     private HwndSource? _source;
     private AppSettings _settings;
+    private readonly TerminalActivator _terminalActivator = new();
     public string HotKeyStatus => _hotKeys?.RegistrationSummary ?? "Shortcuts are not registered yet.";
 
     public MainWindow(DesktopSessionStore sessions, AppSettings settings)
@@ -99,6 +100,13 @@ public partial class MainWindow : Window
     private void OnCloseSessionClick(object sender, RoutedEventArgs e)
     {
         if (sender is WpfButton { Tag: string sessionId }) _sessions.RemoveSession(sessionId);
+    }
+
+    private void OnJumpClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not WpfButton { Tag: SessionSnapshot snapshot }) return;
+        var activated = _terminalActivator.TryActivate(snapshot.ProcessId, snapshot.WorkingDirectory);
+        if (!activated) ToolTip = "No matching terminal or IDE window was found.";
     }
 
     private void PositionPanel()
