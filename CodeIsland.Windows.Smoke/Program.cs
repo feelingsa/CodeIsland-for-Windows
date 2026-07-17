@@ -109,6 +109,10 @@ finally
 {
     if (Directory.Exists(locatorRoot)) Directory.Delete(locatorRoot, true);
 }
+var startupExecutable = Path.Combine(Path.GetTempPath(), "CodeIsland", "CodeIsland.Windows.exe");
+Require(StartupRegistration.BuildCommand(startupExecutable) == $"\"{Path.GetFullPath(startupExecutable)}\"",
+    "Startup command must quote and normalize the executable path.");
+Console.WriteLine("SMOKE PASS: startup command generation verified without registry mutation.");
 return 0;
 
 static void Require(bool condition, string message)

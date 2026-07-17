@@ -24,7 +24,8 @@
                     <ComboBox x:Name="LanguageBox" Width="220" HorizontalAlignment="Left" Margin="0,7,0,18">
                         <ComboBoxItem Content="System" Tag="system"/><ComboBoxItem Content="简体中文" Tag="zh-CN"/><ComboBoxItem Content="English" Tag="en-US"/>
                     </ComboBox>
-                    <TextBlock Text="Settings are stored in your roaming AppData folder." Foreground="#FFABB3C0"/>
+                    <CheckBox x:Name="LaunchAtLoginBox" Content="Launch CodeIsland when I sign in" Margin="0,0,0,18"/>
+                    <TextBlock x:Name="GeneralStatus" Text="Settings are stored in your roaming AppData folder." Foreground="#FFABB3C0"/>
                 </StackPanel>
             </TabItem>
             <TabItem Header="Behavior">

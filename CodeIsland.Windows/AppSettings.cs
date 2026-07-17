@@ -4,6 +4,7 @@ public sealed record AppSettings
 {
     public int Version { get; init; } = 1;
     public string Language { get; init; } = "system";
+    public bool LaunchAtLogin { get; init; }
     public bool SoundEnabled { get; init; } = true;
     public int MaxVisibleSessions { get; init; } = 5;
     public int EventHistoryLimit { get; init; } = 200;

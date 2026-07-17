@@ -11,6 +11,7 @@ public partial class SettingsWindow : Window
     private readonly SettingsStore _store;
     private readonly Action<AppSettings> _applied;
     private AppSettings _settings;
+    private readonly StartupRegistration _startup = new();
 
     public SettingsWindow(SettingsStore store, AppSettings settings, Action<AppSettings> applied)
     {
@@ -19,6 +20,7 @@ public partial class SettingsWindow : Window
         _settings = settings;
         _applied = applied;
         SelectLanguage(settings.Language);
+        LaunchAtLoginBox.IsChecked = settings.LaunchAtLogin || _startup.IsEnabled();
         SoundEnabledBox.IsChecked = settings.SoundEnabled;
         CleanupMinutesBox.Text = settings.SessionCleanupMinutes.ToString();
         MaxSessionsBox.Text = settings.MaxVisibleSessions.ToString();
@@ -37,6 +39,7 @@ public partial class SettingsWindow : Window
         _settings = _settings with
         {
             Language = (LanguageBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "system",
+            LaunchAtLogin = LaunchAtLoginBox.IsChecked == true,
             SoundEnabled = SoundEnabledBox.IsChecked == true,
             SessionCleanupMinutes = Parse(CleanupMinutesBox.Text, _settings.SessionCleanupMinutes),
             MaxVisibleSessions = Parse(MaxSessionsBox.Text, _settings.MaxVisibleSessions),
@@ -44,6 +47,15 @@ public partial class SettingsWindow : Window
         };
         _settings = _settings.Validate();
         _store.Save(_settings);
+        try
+        {
+            var executable = Path.Combine(AppContext.BaseDirectory, "CodeIsland.Windows.exe");
+            _startup.SetEnabled(_settings.LaunchAtLogin, executable);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            GeneralStatus.Text = ex.Message;
+        }
         _applied(_settings);
         DialogResult = true;
     }
