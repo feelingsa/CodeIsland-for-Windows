@@ -9,7 +9,8 @@ public sealed record HookTool(
     IReadOnlyList<string> ConfigPaths,
     string HookMarker,
     IReadOnlyList<string> Events,
-    HookConfigurationFormat Format);
+    HookConfigurationFormat Format,
+    int CommandTimeout);
 
 public enum HookConfigurationFormat { Claude, EventMap }
 
@@ -27,12 +28,12 @@ public static class KnownTools
     [
         new(AgentKind.Claude, "Claude Code", ["claude.exe", "claude.cmd", "claude"],
             [@".claude\settings.json", @".claude.json"], "codeisland-claude",
-            ["SessionStart", "PreToolUse", "PostToolUse", "PermissionRequest", "Stop"], HookConfigurationFormat.Claude),
+            ["SessionStart", "PreToolUse", "PostToolUse", "PermissionRequest", "Stop"], HookConfigurationFormat.Claude, 5),
         new(AgentKind.Codex, "Codex", ["codex.exe", "codex.cmd", "codex"],
             [@".codex\hooks.json", @".codex\config.json"], "codeisland-codex",
-            ["SessionStart", "PreToolUse", "PermissionRequest", "SessionEnd"], HookConfigurationFormat.EventMap),
+            ["SessionStart", "PreToolUse", "PermissionRequest", "SessionEnd"], HookConfigurationFormat.EventMap, 5),
         new(AgentKind.Gemini, "Gemini CLI", ["gemini.exe", "gemini.cmd", "gemini"],
             [@".gemini\settings.json", @".gemini\hooks.json"], "codeisland-gemini",
-            ["SessionStart", "BeforeTool", "AfterTool", "Notification", "SessionEnd"], HookConfigurationFormat.EventMap)
+            ["SessionStart", "BeforeTool", "AfterTool", "Notification", "SessionEnd"], HookConfigurationFormat.EventMap, 10000)
     ];
 }

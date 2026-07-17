@@ -65,6 +65,22 @@ if (command == "self-test")
         Require(claudeEntry?["hooks"]?[0]?["type"]?.GetValue<string>() == "command",
             "Claude native hooks must contain a command hook.");
         Require(!manager.Uninstall(claude).HookInstalled, "Claude uninstall must remove registration.");
+
+        var gemini = KnownTools.All.Single(value => value.DisplayName == "Gemini CLI");
+        File.WriteAllText(Path.Combine(bin, "gemini.cmd"), "@echo off");
+        var geminiConfig = Path.Combine(home, gemini.ConfigPaths[0]);
+        Directory.CreateDirectory(Path.GetDirectoryName(geminiConfig)!);
+        File.WriteAllText(geminiConfig, "{\"security\":{\"auth\":\"oauth\"}}");
+        Require(manager.Install(gemini, bridge).IsHealthy, "Gemini install must be healthy.");
+        var geminiRoot = JsonNode.Parse(File.ReadAllText(geminiConfig))!.AsObject();
+        var geminiEntry = geminiRoot["hooks"]?[gemini.Events[0]]?[0]?.AsObject();
+        Require(geminiEntry is not null && !geminiEntry.ContainsKey("matcher"),
+            "Gemini native hooks must use the matcher-free event-map format.");
+        Require(geminiEntry?["hooks"]?[0]?["timeout"]?.GetValue<int>() == 10000,
+            "Gemini native hook timeout must be expressed in milliseconds.");
+        Require(File.ReadAllText(geminiConfig).Contains("oauth", StringComparison.Ordinal),
+            "Gemini user settings must be preserved.");
+        Require(!manager.Uninstall(gemini).HookInstalled, "Gemini uninstall must remove registration.");
         Console.WriteLine("SELF-TEST PASS: detect, backup, install, idempotency, health and uninstall verified.");
         return 0;
     }
