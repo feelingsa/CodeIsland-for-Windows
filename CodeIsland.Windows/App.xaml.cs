@@ -5,6 +5,7 @@ using System.Windows;
 using System.Threading;
 using System.Windows.Forms;
 using CodeIsland.Ipc;
+using CodeIsland.Core;
 using Application = System.Windows.Application;
 
 namespace CodeIsland.Windows;
@@ -50,19 +51,22 @@ public partial class App : Application
     private void StartPipeServer()
     {
         _pipeStop = new CancellationTokenSource();
-        _pipeServer = new PipeServer((message, _) =>
+        _pipeServer = new PipeServer(async (message, cancellationToken) =>
         {
             if (message.Type == PipeMessageType.Event && message.Event is not null)
             {
+                if (message.Event.Type is AgentEventType.PermissionRequest or AgentEventType.Question)
+                {
+                    Task<PipeMessage>? responseTask = null;
+                    Dispatcher.Invoke(() => { responseTask = Sessions.WaitForResponseAsync(message.Event, cancellationToken); });
+                    return await responseTask!;
+                }
                 Dispatcher.Invoke(() => Sessions.Apply(message.Event));
-                return ValueTask.FromResult<PipeMessage?>(new PipeMessage(
-                    PipeMessageType.Ack, Guid.NewGuid().ToString("N"), AckFor: message.MessageId));
+                return new PipeMessage(PipeMessageType.Ack, Guid.NewGuid().ToString("N"), AckFor: message.MessageId);
             }
             if (message.Type is PipeMessageType.Hello or PipeMessageType.Heartbeat)
-                return ValueTask.FromResult<PipeMessage?>(new PipeMessage(
-                    PipeMessageType.Ack, Guid.NewGuid().ToString("N"), AckFor: message.MessageId));
-            return ValueTask.FromResult<PipeMessage?>(new PipeMessage(
-                PipeMessageType.Error, Guid.NewGuid().ToString("N"), Error: "Unsupported message."));
+                return new PipeMessage(PipeMessageType.Ack, Guid.NewGuid().ToString("N"), AckFor: message.MessageId);
+            return new PipeMessage(PipeMessageType.Error, Guid.NewGuid().ToString("N"), Error: "Unsupported message.");
         });
         _pipeTask = _pipeServer.RunAsync(_pipeStop.Token);
     }

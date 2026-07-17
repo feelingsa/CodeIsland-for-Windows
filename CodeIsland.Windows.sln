@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeIsland.Hooks.Cli", "Cod
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeIsland.Windows", "CodeIsland.Windows\CodeIsland.Windows.csproj", "{1915CF9D-9DB6-4935-B110-9301633A0CCA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeIsland.Windows.Smoke", "CodeIsland.Windows.Smoke\CodeIsland.Windows.Smoke.csproj", "{88D0C12D-8CA5-4B85-915E-3A8B5762747D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -60,5 +62,9 @@ Global
 		{1915CF9D-9DB6-4935-B110-9301633A0CCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1915CF9D-9DB6-4935-B110-9301633A0CCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1915CF9D-9DB6-4935-B110-9301633A0CCA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88D0C12D-8CA5-4B85-915E-3A8B5762747D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88D0C12D-8CA5-4B85-915E-3A8B5762747D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88D0C12D-8CA5-4B85-915E-3A8B5762747D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88D0C12D-8CA5-4B85-915E-3A8B5762747D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
