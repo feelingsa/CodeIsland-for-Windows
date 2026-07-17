@@ -22,6 +22,15 @@ Require(response.AckFor == request.EventId, "Response must target the pending ev
 Require(store.PendingCount == 0, "Resolved request must be removed.");
 
 Console.WriteLine("SMOKE PASS: permission request, pending state, approve action and response payload verified.");
+
+var question = request with { EventId = "question-1", Type = AgentEventType.Question, Text = "Which environment?" };
+var questionPending = store.WaitForResponseAsync(question, stop.Token);
+Require(store.Sessions.Single().State == SessionState.WaitingForAnswer, "Session must enter WaitingForAnswer state.");
+Require(store.Resolve(question.EventId, UserAction.Answer, "staging"), "Answer action must resolve the question.");
+var answer = await questionPending;
+Require(answer.Action == UserAction.Answer && answer.ResponseText == "staging",
+    "Answer response must preserve user text.");
+Console.WriteLine("SMOKE PASS: question request and text answer payload verified.");
 return 0;
 
 static void Require(bool condition, string message)

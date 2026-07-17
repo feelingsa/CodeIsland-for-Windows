@@ -32,10 +32,30 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Grid Margin="0,5,0,0">
+                                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="80"/><ColumnDefinition Width="110"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                                     <TextBlock Text="{Binding Agent}" Foreground="#FF8BE9FD"/>
                                     <TextBlock Grid.Column="1" Text="{Binding State}" Foreground="#FFF4C86A"/>
                                     <TextBlock Grid.Column="2" Text="{Binding LastMessage}" Foreground="#FFD5DAE4" TextTrimming="CharacterEllipsis"/>
+                                    <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="0,7,0,0">
+                                        <StackPanel.Style>
+                                            <Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers><DataTrigger Binding="{Binding State}" Value="WaitingForPermission"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
+                                            </Style>
+                                        </StackPanel.Style>
+                                        <Button Content="允许" Tag="{Binding PendingEventId}" Click="OnApproveClick" Padding="10,4" Margin="0,0,6,0"/>
+                                        <Button Content="拒绝" Tag="{Binding PendingEventId}" Click="OnDenyClick" Padding="10,4" Margin="0,0,6,0"/>
+                                        <Button Content="始终允许" Tag="{Binding PendingEventId}" Click="OnAlwaysAllowClick" Padding="10,4"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="0,7,0,0">
+                                        <StackPanel.Style>
+                                            <Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers><DataTrigger Binding="{Binding State}" Value="WaitingForAnswer"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
+                                            </Style>
+                                        </StackPanel.Style>
+                                        <TextBox Width="250" Tag="{Binding PendingEventId}" TextChanged="OnAnswerChanged" Padding="6,4"/>
+                                        <Button Content="发送" Tag="{Binding PendingEventId}" Click="OnAnswerClick" Padding="12,4" Margin="6,0,0,0"/>
+                                    </StackPanel>
                                 </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
