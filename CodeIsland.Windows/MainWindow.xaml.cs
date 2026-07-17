@@ -11,6 +11,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Interop;
 
 namespace CodeIsland.Windows;
 
@@ -26,6 +27,7 @@ public partial class MainWindow : Window
     private const double CollapsedHeight = 64;
     private readonly DesktopSessionStore _sessions;
     private readonly Dictionary<string, string> _answerDrafts = new(StringComparer.Ordinal);
+    private GlobalHotKeyManager? _hotKeys;
 
     public MainWindow(DesktopSessionStore sessions)
     {
@@ -33,6 +35,14 @@ public partial class MainWindow : Window
         _sessions = sessions;
         DataContext = sessions;
         Loaded += (_, _) => PositionPanel();
+        SourceInitialized += (_, _) =>
+        {
+            if (PresentationSource.FromVisual(this) is HwndSource source)
+                _hotKeys = new GlobalHotKeyManager(source, TogglePanel,
+                    () => _sessions.ResolveCurrent(UserAction.Approve),
+                    () => _sessions.ResolveCurrent(UserAction.Deny));
+        };
+        Closed += (_, _) => _hotKeys?.Dispose();
         StateChanged += (_, _) => { if (WindowState == WindowState.Minimized) Hide(); };
         MouseLeftButtonDown += (_, _) => DragMove();
         MouseDoubleClick += (_, _) => TogglePanel();

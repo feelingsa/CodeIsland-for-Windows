@@ -23,6 +23,11 @@ Require(store.PendingCount == 0, "Resolved request must be removed.");
 Require(store.Sessions.Single().State == SessionState.Running,
     "Resolved permission request must return the session to Running.");
 
+var denyRequest = request with { EventId = "permission-2" };
+var denyPending = store.WaitForResponseAsync(denyRequest, stop.Token);
+Require(store.ResolveCurrent(UserAction.Deny), "Current pending request must be selectable for deny.");
+Require((await denyPending).Action == UserAction.Deny, "Current request deny action must be returned.");
+
 Console.WriteLine("SMOKE PASS: permission request, pending state, approve action and response payload verified.");
 
 var question = request with { EventId = "question-1", Type = AgentEventType.Question, Text = "Which environment?" };

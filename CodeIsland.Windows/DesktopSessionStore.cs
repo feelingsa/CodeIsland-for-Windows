@@ -64,6 +64,13 @@ public sealed class DesktopSessionStore : INotifyPropertyChanged
             ResponseText: responseText));
     }
 
+    public bool ResolveCurrent(UserAction action)
+    {
+        var pending = Sessions.FirstOrDefault(value =>
+            value.State is SessionState.WaitingForPermission or SessionState.WaitingForAnswer);
+        return pending?.PendingEventId is { } eventId && Resolve(eventId, action);
+    }
+
     public int PendingCount => _pending.Count;
 
     public int RemoveExpired(DateTimeOffset cutoff)
