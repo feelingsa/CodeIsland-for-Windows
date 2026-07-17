@@ -1,6 +1,7 @@
 using CodeIsland.Core;
 using CodeIsland.Ipc;
 using CodeIsland.Windows;
+using CodeIsland.Bluetooth;
 
 var store = new DesktopSessionStore();
 var request = new AgentEvent(
@@ -155,12 +156,25 @@ try
     Require(terminalTarget?.Executable.EndsWith("wt.exe", StringComparison.OrdinalIgnoreCase) == true
             && terminalTarget.Arguments.StartsWith("-d ", StringComparison.Ordinal),
         "Terminal sessions must prefer Windows Terminal with a working-directory argument.");
-    Console.WriteLine("SMOKE PASS: Cursor and Windows Terminal fallback launch resolution verified.");
+Console.WriteLine("SMOKE PASS: Cursor and Windows Terminal fallback launch resolution verified.");
 }
 finally
 {
     if (Directory.Exists(launcherRoot)) Directory.Delete(launcherRoot, true);
 }
+var agentFrame = BuddyProtocol.EncodeAgent(AgentKind.Codex, SessionState.WaitingForPermission, "shell");
+Require(agentFrame.SequenceEqual(new byte[] { 1, 3, 5, (byte)'s', (byte)'h', (byte)'e', (byte)'l', (byte)'l' }),
+    "Buddy agent frame must match the upstream byte layout.");
+var pairFrame = BuddyProtocol.EncodePairRequest(new byte[] { 1, 2, 3, 4, 5, 6 });
+Require(pairFrame.SequenceEqual(new byte[] { 0xE0, 1, 2, 3, 4, 5, 6 }),
+    "Buddy pair request must contain marker and six-byte host id.");
+Require(BuddyProtocol.EncodeBrightness(500).SequenceEqual(new byte[] { 0xFE, 100 }),
+    "Buddy brightness must clamp to 100 percent.");
+Require(BuddyProtocol.DecodeUplink(new byte[] { 0xF0 }) is { Kind: BuddyUplinkKind.ControlCommand, Value: 0xF0 },
+    "Buddy approve opcode must decode as a control command.");
+Require(BuddyProtocol.DecodeUplink(new byte[] { 0xE2 }) is { Kind: BuddyUplinkKind.PairResponse },
+    "Buddy pending opcode must decode as a pair response.");
+Console.WriteLine("SMOKE PASS: Buddy agent, pairing, brightness and uplink frames verified.");
 return 0;
 
 static void Require(bool condition, string message)

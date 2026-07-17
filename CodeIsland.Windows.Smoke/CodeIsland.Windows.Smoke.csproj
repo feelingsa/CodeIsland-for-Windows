@@ -4,6 +4,7 @@
     <ProjectReference Include="..\CodeIsland.Windows\CodeIsland.Windows.csproj" />
     <ProjectReference Include="..\CodeIsland.Core\CodeIsland.Core.csproj" />
     <ProjectReference Include="..\CodeIsland.Ipc\CodeIsland.Ipc.csproj" />
+    <ProjectReference Include="..\CodeIsland.Bluetooth\CodeIsland.Bluetooth.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
