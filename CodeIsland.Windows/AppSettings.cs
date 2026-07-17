@@ -10,6 +10,7 @@ public sealed record AppSettings
     public int MaxVisibleSessions { get; init; } = 5;
     public int EventHistoryLimit { get; init; } = 200;
     public int SessionCleanupMinutes { get; init; } = 30;
+    public bool HideInFullscreen { get; init; } = true;
     public string ToggleShortcut { get; init; } = "Ctrl+Shift+I";
     public string ApproveShortcut { get; init; } = "Ctrl+Shift+A";
     public string DenyShortcut { get; init; } = "Ctrl+Shift+D";

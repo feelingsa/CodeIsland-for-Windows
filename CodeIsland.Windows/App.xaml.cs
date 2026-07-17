@@ -21,6 +21,8 @@ public partial class App : Application
     private CancellationTokenSource? _pipeStop;
     private Task? _pipeTask;
     private DispatcherTimer? _cleanupTimer;
+    private DispatcherTimer? _fullscreenTimer;
+    private bool _fullscreenSuppressed;
     private readonly NotificationSoundManager _sounds = new();
     private readonly SettingsStore _settingsStore = new();
     private SettingsWindow? _settingsWindow;
@@ -50,6 +52,9 @@ public partial class App : Application
         };
         _window = new MainWindow(Sessions, _settings);
         _window.Show();
+        _fullscreenTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+        _fullscreenTimer.Tick += (_, _) => UpdateFullscreenVisibility();
+        _fullscreenTimer.Start();
         _cleanupTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
         _cleanupTimer.Tick += (_, _) => Sessions.RemoveExpired(DateTimeOffset.UtcNow.AddMinutes(-_settings.SessionCleanupMinutes));
         _cleanupTimer.Start();
@@ -112,6 +117,27 @@ public partial class App : Application
         _sounds.Enabled = settings.SoundEnabled;
         L10n.Apply(Resources, settings.Language);
         _window?.ApplySettings(settings);
+        if (!settings.HideInFullscreen && _fullscreenSuppressed && _window is not null)
+        {
+            _window.Show();
+            _fullscreenSuppressed = false;
+        }
+    }
+
+    private void UpdateFullscreenVisibility()
+    {
+        if (_window is null || !_settings.HideInFullscreen) return;
+        var fullscreen = FullscreenDetector.IsFullscreenForeground(_window.NativeHandle);
+        if (fullscreen && _window.IsVisible)
+        {
+            _window.Hide();
+            _fullscreenSuppressed = true;
+        }
+        else if (!fullscreen && _fullscreenSuppressed)
+        {
+            _window.Show();
+            _fullscreenSuppressed = false;
+        }
     }
 
     private void StartPipeServer()
@@ -149,6 +175,7 @@ public partial class App : Application
         _pipeStop?.Cancel();
         _logger.Info("Application exit.");
         _cleanupTimer?.Stop();
+        _fullscreenTimer?.Stop();
         if (_pipeTask is not null)
         {
             try { _pipeTask.GetAwaiter().GetResult(); }

@@ -212,6 +212,12 @@ Require(Math.Abs(displayPosition.Left - 1640) < 0.01 && Math.Abs(displayPosition
 Require(new AppSettings { DisplayMode = "invalid" }.Validate().DisplayMode == "primary",
     "Invalid display mode must fall back to primary.");
 Console.WriteLine("SMOKE PASS: multi-display DPI positioning and settings validation verified.");
+var monitorBounds = new System.Drawing.Rectangle(0, 0, 1920, 1080);
+Require(FullscreenDetector.IsSameBounds(new System.Drawing.Rectangle(0, 0, 1920, 1080), monitorBounds),
+    "A window covering the monitor must be detected as full screen.");
+Require(!FullscreenDetector.IsSameBounds(new System.Drawing.Rectangle(0, 0, 1920, 1040), monitorBounds),
+    "A window leaving taskbar space must not be detected as full screen.");
+Console.WriteLine("SMOKE PASS: full-screen monitor bounds detection verified.");
 return 0;
 
 static void Require(bool condition, string message)

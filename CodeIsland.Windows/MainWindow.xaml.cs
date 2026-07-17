@@ -35,6 +35,7 @@ public partial class MainWindow : Window
     private readonly TerminalActivator _terminalActivator = new();
     private readonly WorkspaceLauncher _workspaceLauncher = new();
     public string HotKeyStatus => _hotKeys?.RegistrationSummary ?? "Shortcuts are not registered yet.";
+    public IntPtr NativeHandle => new WindowInteropHelper(this).Handle;
 
     public MainWindow(DesktopSessionStore sessions, AppSettings settings)
     {
