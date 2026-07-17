@@ -13,13 +13,14 @@ public partial class SettingsWindow : Window
     private AppSettings _settings;
     private readonly StartupRegistration _startup = new();
 
-    public SettingsWindow(SettingsStore store, AppSettings settings, Action<AppSettings> applied)
+    public SettingsWindow(SettingsStore store, AppSettings settings, Action<AppSettings> applied, Func<string> hotKeyStatus)
     {
         InitializeComponent();
         _store = store;
         _settings = settings;
         _applied = applied;
         ApplyToForm(settings, includeRegistryState: true);
+        ShortcutStatus.Text = hotKeyStatus();
         RefreshHooks();
     }
 
@@ -37,11 +38,19 @@ public partial class SettingsWindow : Window
         CleanupMinutesBox.Text = settings.SessionCleanupMinutes.ToString();
         MaxSessionsBox.Text = settings.MaxVisibleSessions.ToString();
         HistoryLimitBox.Text = settings.EventHistoryLimit.ToString();
+        ToggleShortcutBox.Text = settings.ToggleShortcut;
+        ApproveShortcutBox.Text = settings.ApproveShortcut;
+        DenyShortcutBox.Text = settings.DenyShortcut;
     }
 
     private void OnSave(object sender, RoutedEventArgs e)
     {
-        _settings = ReadForm();
+        try { _settings = ReadForm(); }
+        catch (InvalidOperationException ex)
+        {
+            ShortcutStatus.Text = ex.Message;
+            return;
+        }
         _store.Save(_settings);
         try
         {
@@ -94,15 +103,31 @@ public partial class SettingsWindow : Window
         GeneralStatus.Text = $"Exported to {Path.GetFileName(dialog.FileName)}.";
     }
 
-    private AppSettings ReadForm() => (_settings with
+    private AppSettings ReadForm()
     {
-        Language = (LanguageBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "system",
-        LaunchAtLogin = LaunchAtLoginBox.IsChecked == true,
-        SoundEnabled = SoundEnabledBox.IsChecked == true,
-        SessionCleanupMinutes = Parse(CleanupMinutesBox.Text, _settings.SessionCleanupMinutes),
-        MaxVisibleSessions = Parse(MaxSessionsBox.Text, _settings.MaxVisibleSessions),
-        EventHistoryLimit = Parse(HistoryLimitBox.Text, _settings.EventHistoryLimit)
-    }).Validate();
+        var shortcuts = new[] { ToggleShortcutBox.Text, ApproveShortcutBox.Text, DenyShortcutBox.Text };
+        if (shortcuts.Any(value => !HotKeyBinding.TryParse(value, out _)))
+            throw new InvalidOperationException("Each shortcut must contain modifiers and one letter or digit.");
+        var normalized = shortcuts.Select(value =>
+        {
+            HotKeyBinding.TryParse(value, out var binding);
+            return binding.ToString();
+        }).ToArray();
+        if (normalized.Distinct(StringComparer.OrdinalIgnoreCase).Count() != normalized.Length)
+            throw new InvalidOperationException("Shortcuts must be unique.");
+        return (_settings with
+        {
+            Language = (LanguageBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "system",
+            LaunchAtLogin = LaunchAtLoginBox.IsChecked == true,
+            SoundEnabled = SoundEnabledBox.IsChecked == true,
+            SessionCleanupMinutes = Parse(CleanupMinutesBox.Text, _settings.SessionCleanupMinutes),
+            MaxVisibleSessions = Parse(MaxSessionsBox.Text, _settings.MaxVisibleSessions),
+            EventHistoryLimit = Parse(HistoryLimitBox.Text, _settings.EventHistoryLimit),
+            ToggleShortcut = normalized[0],
+            ApproveShortcut = normalized[1],
+            DenyShortcut = normalized[2]
+        }).Validate();
+    }
     private void OnRefreshHooks(object sender, RoutedEventArgs e) => RefreshHooks();
     private void RefreshHooks() => HooksGrid.ItemsSource = new ToolDetector().DetectAll()
         .Select(value => new HookStatusRow(value.Tool, value.ExecutablePath is not null,

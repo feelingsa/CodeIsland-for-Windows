@@ -41,7 +41,7 @@ public partial class App : Application
         _sounds.Enabled = _settings.SoundEnabled;
         StartPipeServer();
         Sessions.EventApplied += (_, agentEvent) => _sounds.Play(agentEvent);
-        _window = new MainWindow(Sessions);
+        _window = new MainWindow(Sessions, _settings);
         _window.Show();
         _cleanupTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
         _cleanupTimer.Tick += (_, _) => Sessions.RemoveExpired(DateTimeOffset.UtcNow.AddMinutes(-_settings.SessionCleanupMinutes));
@@ -71,7 +71,8 @@ public partial class App : Application
             _settingsWindow.Activate();
             return;
         }
-        _settingsWindow = new SettingsWindow(_settingsStore, _settings, ApplySettings);
+        _settingsWindow = new SettingsWindow(_settingsStore, _settings, ApplySettings,
+            () => _window?.HotKeyStatus ?? "Shortcuts are unavailable.");
         _settingsWindow.Closed += (_, _) => _settingsWindow = null;
         _settingsWindow.Show();
     }
@@ -81,6 +82,7 @@ public partial class App : Application
         _settings = settings;
         _sounds.Enabled = settings.SoundEnabled;
         L10n.Apply(Resources, settings.Language);
+        _window?.ApplySettings(settings);
     }
 
     private void StartPipeServer()

@@ -120,6 +120,12 @@ var startupExecutable = Path.Combine(Path.GetTempPath(), "CodeIsland", "CodeIsla
 Require(StartupRegistration.BuildCommand(startupExecutable) == $"\"{Path.GetFullPath(startupExecutable)}\"",
     "Startup command must quote and normalize the executable path.");
 Console.WriteLine("SMOKE PASS: startup command generation verified without registry mutation.");
+Require(HotKeyBinding.TryParse("ctrl+shift+i", out var parsedHotKey), "Valid shortcut must parse.");
+Require(parsedHotKey.ToString() == "Ctrl+Shift+I", "Shortcut must normalize modifier and key casing.");
+Require(!HotKeyBinding.TryParse("Ctrl+Shift", out _), "Shortcut without a key must be rejected.");
+var normalizedSettings = new AppSettings { ToggleShortcut = "Ctrl+Shift+I", ApproveShortcut = "Ctrl+Shift+I" }.Validate();
+Require(normalizedSettings.ApproveShortcut == "Ctrl+Shift+I", "Settings validation must preserve valid shortcut syntax.");
+Console.WriteLine("SMOKE PASS: shortcut parsing and normalization verified.");
 return 0;
 
 static void Require(bool condition, string message)

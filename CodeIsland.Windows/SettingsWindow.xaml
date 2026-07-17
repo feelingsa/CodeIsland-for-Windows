@@ -82,10 +82,11 @@
             <TabItem Header="Shortcuts">
                 <Grid Margin="18">
                     <Grid.ColumnDefinitions><ColumnDefinition Width="220"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
-                    <TextBlock Text="Toggle panel"/><TextBlock Grid.Column="1" Text="Ctrl+Shift+I"/>
-                    <TextBlock Grid.Row="1" Text="Approve request"/><TextBlock Grid.Row="1" Grid.Column="1" Text="Ctrl+Shift+A"/>
-                    <TextBlock Grid.Row="2" Text="Deny request"/><TextBlock Grid.Row="2" Grid.Column="1" Text="Ctrl+Shift+D"/>
+                    <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                    <TextBlock Text="Toggle panel" VerticalAlignment="Center"/><TextBox x:Name="ToggleShortcutBox" Grid.Column="1" Margin="8,4"/>
+                    <TextBlock Grid.Row="1" Text="Approve request" VerticalAlignment="Center"/><TextBox x:Name="ApproveShortcutBox" Grid.Row="1" Grid.Column="1" Margin="8,4"/>
+                    <TextBlock Grid.Row="2" Text="Deny request" VerticalAlignment="Center"/><TextBox x:Name="DenyShortcutBox" Grid.Row="2" Grid.Column="1" Margin="8,4"/>
+                    <TextBlock x:Name="ShortcutStatus" Grid.Row="3" Grid.ColumnSpan="2" Foreground="#FFABB3C0" Margin="0,12,0,0" Text="Format: Ctrl+Shift+I, Alt+Shift+A, or Win+Ctrl+D"/>
                 </Grid>
             </TabItem>
             <TabItem Header="About">

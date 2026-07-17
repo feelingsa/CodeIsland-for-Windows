@@ -30,20 +30,25 @@ public partial class MainWindow : Window
     private readonly DesktopSessionStore _sessions;
     private readonly Dictionary<string, string> _answerDrafts = new(StringComparer.Ordinal);
     private GlobalHotKeyManager? _hotKeys;
+    private HwndSource? _source;
+    private AppSettings _settings;
+    public string HotKeyStatus => _hotKeys?.RegistrationSummary ?? "Shortcuts are not registered yet.";
 
-    public MainWindow(DesktopSessionStore sessions)
+    public MainWindow(DesktopSessionStore sessions, AppSettings settings)
     {
         InitializeComponent();
         _sessions = sessions;
+        _settings = settings;
         _sessions.EventApplied += OnEventApplied;
         DataContext = sessions;
         Loaded += (_, _) => PositionPanel();
         SourceInitialized += (_, _) =>
         {
             if (PresentationSource.FromVisual(this) is HwndSource source)
-                _hotKeys = new GlobalHotKeyManager(source, TogglePanel,
-                    () => _sessions.ResolveCurrent(UserAction.Approve),
-                    () => _sessions.ResolveCurrent(UserAction.Deny));
+            {
+                _source = source;
+                RegisterHotKeys();
+            }
         };
         Closed += (_, _) =>
         {
@@ -53,6 +58,20 @@ public partial class MainWindow : Window
         StateChanged += (_, _) => { if (WindowState == WindowState.Minimized) Hide(); };
         MouseLeftButtonDown += (_, _) => DragMove();
         MouseDoubleClick += (_, _) => TogglePanel();
+    }
+
+    public void ApplySettings(AppSettings settings)
+    {
+        _settings = settings;
+        if (_source is not null) RegisterHotKeys();
+    }
+
+    private void RegisterHotKeys()
+    {
+        _hotKeys?.Dispose();
+        _hotKeys = new GlobalHotKeyManager(_source!, _settings, TogglePanel,
+            () => _sessions.ResolveCurrent(UserAction.Approve),
+            () => _sessions.ResolveCurrent(UserAction.Deny));
     }
 
     private void OnApproveClick(object sender, RoutedEventArgs e) => Resolve(sender, UserAction.Approve);
