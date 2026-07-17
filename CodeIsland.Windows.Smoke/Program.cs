@@ -52,6 +52,16 @@ Require(removed == 2, "Expired session cleanup must remove sessions older than t
 Require(bounded.RemoveSession("bounded-1"), "Visible session must support explicit removal.");
 Require(bounded.SessionCount == 0, "Explicit removal must update the visible collection.");
 Console.WriteLine("SMOKE PASS: state recovery, bounded history, visible limit and expiry cleanup verified.");
+
+Require(NotificationSoundManager.CueFor(AgentEventType.SessionStart) == NotificationCue.Start,
+    "Session start must map to the start cue.");
+Require(NotificationSoundManager.CueFor(AgentEventType.PermissionRequest) == NotificationCue.Approval,
+    "Permission request must map to the approval cue.");
+Require(NotificationSoundManager.CueFor(AgentEventType.SessionEnd) == NotificationCue.Complete,
+    "Session end must map to the completion cue.");
+Require(NotificationSoundManager.CueFor(AgentEventType.Error) == NotificationCue.Error,
+    "Error must map to the error cue.");
+Console.WriteLine("SMOKE PASS: notification sound event mapping verified.");
 return 0;
 
 static void Require(bool condition, string message)

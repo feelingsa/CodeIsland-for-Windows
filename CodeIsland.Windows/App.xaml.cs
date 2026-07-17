@@ -20,6 +20,7 @@ public partial class App : Application
     private CancellationTokenSource? _pipeStop;
     private Task? _pipeTask;
     private DispatcherTimer? _cleanupTimer;
+    private readonly NotificationSoundManager _sounds = new();
     public DesktopSessionStore Sessions { get; } = new();
 
     protected override void OnStartup(StartupEventArgs e)
@@ -32,6 +33,7 @@ public partial class App : Application
         }
 
         StartPipeServer();
+        Sessions.EventApplied += (_, agentEvent) => _sounds.Play(agentEvent);
         _window = new MainWindow(Sessions);
         _window.Show();
         _cleanupTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };

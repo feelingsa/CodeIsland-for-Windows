@@ -14,6 +14,7 @@ public sealed class DesktopSessionStore : INotifyPropertyChanged
     private readonly int _maxVisibleSessions;
     public ObservableCollection<SessionSnapshot> Sessions { get; } = [];
     public ObservableCollection<AgentEvent> EventHistory { get; } = [];
+    public event EventHandler<AgentEvent>? EventApplied;
     public int SessionCount => Sessions.Count;
     public bool HasSessions => Sessions.Count > 0;
     public bool IsIdle => !HasSessions;
@@ -40,6 +41,7 @@ public sealed class DesktopSessionStore : INotifyPropertyChanged
         OnPropertyChanged(nameof(SessionCount));
         OnPropertyChanged(nameof(HasSessions));
         OnPropertyChanged(nameof(IsIdle));
+        EventApplied?.Invoke(this, agentEvent);
     }
 
     public Task<PipeMessage> WaitForResponseAsync(AgentEvent agentEvent, CancellationToken cancellationToken)
