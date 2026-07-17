@@ -13,6 +13,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Interop;
 using System.Windows.Media.Animation;
+using System.ComponentModel;
 using CodeIsland.Core;
 
 namespace CodeIsland.Windows;
@@ -34,6 +35,8 @@ public partial class MainWindow : Window
     private AppSettings _settings;
     private readonly TerminalActivator _terminalActivator = new();
     private readonly WorkspaceLauncher _workspaceLauncher = new();
+    private ICollectionView? _sessionView;
+    private string _filter = "all";
     public string HotKeyStatus => _hotKeys?.RegistrationSummary ?? "Shortcuts are not registered yet.";
     public IntPtr NativeHandle => new WindowInteropHelper(this).Handle;
 
@@ -43,8 +46,14 @@ public partial class MainWindow : Window
         _sessions = sessions;
         _settings = settings;
         _sessions.EventApplied += OnEventApplied;
+        _sessions.PropertyChanged += OnSessionsChanged;
         DataContext = sessions;
-        Loaded += (_, _) => PositionPanel();
+        Loaded += (_, _) =>
+        {
+            PositionPanel();
+            _sessionView = ((CollectionViewSource)FindResource("GroupedSessions")).View;
+            _sessionView.Filter = IsSessionVisible;
+        };
         SourceInitialized += (_, _) =>
         {
             if (PresentationSource.FromVisual(this) is HwndSource source)
@@ -57,6 +66,7 @@ public partial class MainWindow : Window
         {
             _hotKeys?.Dispose();
             _sessions.EventApplied -= OnEventApplied;
+            _sessions.PropertyChanged -= OnSessionsChanged;
         };
         StateChanged += (_, _) => { if (WindowState == WindowState.Minimized) Hide(); };
         MouseLeftButtonDown += (_, _) => DragMove();
@@ -103,6 +113,29 @@ public partial class MainWindow : Window
     private void OnCloseSessionClick(object sender, RoutedEventArgs e)
     {
         if (sender is WpfButton { Tag: string sessionId }) _sessions.RemoveSession(sessionId);
+    }
+
+    private void OnSessionsChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(DesktopSessionStore.Sessions) or nameof(DesktopSessionStore.SessionCount))
+            Dispatcher.BeginInvoke(() => _sessionView?.Refresh());
+    }
+
+    private bool IsSessionVisible(object value) =>
+        value is SessionSnapshot session && SessionFilter.IsVisible(session, _filter);
+
+    private void OnFilterClick(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: string filter }) return;
+        _filter = filter;
+        _sessionView?.Refresh();
+        foreach (var border in new[] { AllFilter, ActiveFilter, CliFilter })
+        {
+            border.Background = border.Tag is string tag && tag == _filter
+                ? new SolidColorBrush(System.Windows.Media.Color.FromRgb(36, 36, 38))
+                : new SolidColorBrush(System.Windows.Media.Color.FromRgb(22, 22, 24));
+        }
+        e.Handled = true;
     }
 
     private void OnJumpClick(object sender, RoutedEventArgs e)

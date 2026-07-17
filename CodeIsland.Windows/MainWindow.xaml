@@ -60,13 +60,13 @@
                         <Rectangle Width="6" Height="9" RadiusX="1" Fill="#FFF3F3F3" HorizontalAlignment="Right" Margin="0,0,8,0"/></Grid>
                 </Border>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Background="#FF161618" BorderBrush="#FF2B2B2E" BorderThickness="1" Padding="12,7" CornerRadius="4,0,0,4">
+                    <Border x:Name="AllFilter" Background="#FF242426" BorderBrush="#FF3A3A3D" BorderThickness="1" Padding="12,7" CornerRadius="4,0,0,4" Cursor="Hand" MouseLeftButtonUp="OnFilterClick" Tag="all">
                         <TextBlock Text="ALL" Foreground="#FF747478" FontWeight="Bold" FontSize="13"/>
                     </Border>
-                    <Border Background="#FF161618" BorderBrush="#FF2B2B2E" BorderThickness="0,1,1,1" Padding="12,7">
+                    <Border x:Name="ActiveFilter" Background="#FF161618" BorderBrush="#FF2B2B2E" BorderThickness="0,1,1,1" Padding="12,7" Cursor="Hand" MouseLeftButtonUp="OnFilterClick" Tag="active">
                         <TextBlock Text="STA" Foreground="#FF747478" FontWeight="Bold" FontSize="13"/>
                     </Border>
-                    <Border Background="#FF242426" BorderBrush="#FF3A3A3D" BorderThickness="0,1,1,1" Padding="12,7" CornerRadius="0,4,4,0">
+                    <Border x:Name="CliFilter" Background="#FF161618" BorderBrush="#FF2B2B2E" BorderThickness="0,1,1,1" Padding="12,7" CornerRadius="0,4,4,0" Cursor="Hand" MouseLeftButtonUp="OnFilterClick" Tag="cli">
                         <TextBlock Text="CLI" Foreground="#FF37D067" FontWeight="Bold" FontSize="13"/>
                     </Border>
                 </StackPanel>

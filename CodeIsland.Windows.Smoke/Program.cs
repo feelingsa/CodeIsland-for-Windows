@@ -218,6 +218,16 @@ Require(FullscreenDetector.IsSameBounds(new System.Drawing.Rectangle(0, 0, 1920,
 Require(!FullscreenDetector.IsSameBounds(new System.Drawing.Rectangle(0, 0, 1920, 1040), monitorBounds),
     "A window leaving taskbar space must not be detected as full screen.");
 Console.WriteLine("SMOKE PASS: full-screen monitor bounds detection verified.");
+var filterSession = new SessionSnapshot("filter", AgentKind.Codex, SessionState.Running,
+    DateTimeOffset.UtcNow, DateTimeOffset.UtcNow, null, null, null, null, null, null, null, null);
+Require(SessionFilter.IsVisible(filterSession, "all"), "All filter must include active CLI sessions.");
+Require(SessionFilter.IsVisible(filterSession, "active"), "Active filter must include running sessions.");
+Require(!SessionFilter.IsVisible(filterSession with { State = SessionState.Completed }, "active"),
+    "Active filter must exclude completed sessions.");
+Require(SessionFilter.IsVisible(filterSession, "cli"), "CLI filter must include known CLI agents.");
+Require(!SessionFilter.IsVisible(filterSession with { Agent = AgentKind.Unknown }, "cli"),
+    "CLI filter must exclude unknown sources.");
+Console.WriteLine("SMOKE PASS: all, active and CLI session filters verified.");
 var transcriptRoot = Path.Combine(Path.GetTempPath(), $"codeisland-transcript-{Guid.NewGuid():N}");
 try
 {
