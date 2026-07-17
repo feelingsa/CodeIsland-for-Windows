@@ -39,6 +39,7 @@
                 <StackPanel Margin="18">
                     <TextBlock Text="Session cleanup (minutes)" FontWeight="SemiBold"/>
                     <TextBox x:Name="CleanupMinutesBox" Width="120" HorizontalAlignment="Left" Margin="0,7,0,18"/>
+                    <CheckBox x:Name="HideInFullscreenBox" Content="Hide panel in full-screen applications" Margin="0,0,0,12"/>
                     <TextBlock Text="Inactive sessions are removed automatically after this period." Foreground="#FFABB3C0"/>
                 </StackPanel>
             </TabItem>

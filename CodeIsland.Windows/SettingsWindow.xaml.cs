@@ -38,6 +38,7 @@ public partial class SettingsWindow : Window
             .First(item => Equals(item.Tag, settings.DisplayMode));
         SoundEnabledBox.IsChecked = settings.SoundEnabled;
         CleanupMinutesBox.Text = settings.SessionCleanupMinutes.ToString();
+        HideInFullscreenBox.IsChecked = settings.HideInFullscreen;
         MaxSessionsBox.Text = settings.MaxVisibleSessions.ToString();
         HistoryLimitBox.Text = settings.EventHistoryLimit.ToString();
         ToggleShortcutBox.Text = settings.ToggleShortcut;
@@ -64,11 +65,11 @@ public partial class SettingsWindow : Window
             GeneralStatus.Text = ex.Message;
         }
         _applied(_settings);
-        DialogResult = true;
+        Close();
     }
 
     private static int Parse(string text, int fallback) => int.TryParse(text, out var value) ? value : fallback;
-    private void OnCancel(object sender, RoutedEventArgs e) => DialogResult = false;
+    private void OnCancel(object sender, RoutedEventArgs e) => Close();
     private void OnDefaults(object sender, RoutedEventArgs e)
     {
         _settings = new AppSettings();
@@ -124,6 +125,7 @@ public partial class SettingsWindow : Window
             DisplayMode = (DisplayModeBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "primary",
             SoundEnabled = SoundEnabledBox.IsChecked == true,
             SessionCleanupMinutes = Parse(CleanupMinutesBox.Text, _settings.SessionCleanupMinutes),
+            HideInFullscreen = HideInFullscreenBox.IsChecked == true,
             MaxVisibleSessions = Parse(MaxSessionsBox.Text, _settings.MaxVisibleSessions),
             EventHistoryLimit = Parse(HistoryLimitBox.Text, _settings.EventHistoryLimit),
             ToggleShortcut = normalized[0],
