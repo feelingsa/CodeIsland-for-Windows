@@ -28,6 +28,10 @@
                         <ComboBoxItem Content="System" Tag="system"/><ComboBoxItem Content="简体中文" Tag="zh-CN"/><ComboBoxItem Content="English" Tag="en-US"/>
                     </ComboBox>
                     <CheckBox x:Name="LaunchAtLoginBox" Content="Launch CodeIsland when I sign in" Margin="0,0,0,18"/>
+                    <TextBlock Text="Display" FontWeight="SemiBold"/>
+                    <ComboBox x:Name="DisplayModeBox" Width="220" HorizontalAlignment="Left" Margin="0,7,0,18">
+                        <ComboBoxItem Content="Primary display" Tag="primary"/><ComboBoxItem Content="Display under cursor" Tag="cursor"/>
+                    </ComboBox>
                     <TextBlock x:Name="GeneralStatus" Text="Settings are stored in your roaming AppData folder." Foreground="#FFABB3C0"/>
                 </StackPanel>
             </TabItem>

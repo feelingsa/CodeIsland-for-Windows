@@ -199,12 +199,19 @@ try
     }));
     Require(!diagnosticText.Contains("abcdefghijklmnop", StringComparison.Ordinal),
         "Diagnostics must redact API keys and bearer tokens.");
-    Console.WriteLine("SMOKE PASS: rolling logs, diagnostics ZIP and secret redaction verified.");
+Console.WriteLine("SMOKE PASS: rolling logs, diagnostics ZIP and secret redaction verified.");
 }
 finally
 {
     if (Directory.Exists(diagnosticsRoot)) Directory.Delete(diagnosticsRoot, true);
 }
+var displayPosition = DisplayPositioner.TopCenter(new System.Drawing.Rectangle(1920, 0, 1920, 1080),
+    dpiScaleX: 1.5, dpiScaleY: 1.5, widthDip: 560);
+Require(Math.Abs(displayPosition.Left - 1640) < 0.01 && Math.Abs(displayPosition.Top - 14) < 0.01,
+    "Panel positioning must convert the selected display from pixels to DIPs.");
+Require(new AppSettings { DisplayMode = "invalid" }.Validate().DisplayMode == "primary",
+    "Invalid display mode must fall back to primary.");
+Console.WriteLine("SMOKE PASS: multi-display DPI positioning and settings validation verified.");
 return 0;
 
 static void Require(bool condition, string message)

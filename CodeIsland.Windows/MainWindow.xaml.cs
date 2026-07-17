@@ -65,6 +65,7 @@ public partial class MainWindow : Window
     public void ApplySettings(AppSettings settings)
     {
         _settings = settings;
+        PositionPanel();
         if (_source is not null) RegisterHotKeys();
     }
 
@@ -113,9 +114,11 @@ public partial class MainWindow : Window
 
     private void PositionPanel()
     {
-        var workArea = SystemParameters.WorkArea;
-        Left = workArea.Left + (workArea.Width - Width) / 2;
-        Top = workArea.Top + 14;
+        var area = DisplayPositioner.SelectWorkingArea(_settings.DisplayMode);
+        var transform = PresentationSource.FromVisual(this)?.CompositionTarget?.TransformToDevice;
+        var position = DisplayPositioner.TopCenter(area, transform?.M11 ?? 1, transform?.M22 ?? 1, Width);
+        Left = position.Left;
+        Top = position.Top;
     }
 
     public void TogglePanel()

@@ -34,6 +34,8 @@ public partial class SettingsWindow : Window
     {
         SelectLanguage(settings.Language);
         LaunchAtLoginBox.IsChecked = settings.LaunchAtLogin || includeRegistryState && _startup.IsEnabled();
+        DisplayModeBox.SelectedItem = DisplayModeBox.Items.Cast<ComboBoxItem>()
+            .First(item => Equals(item.Tag, settings.DisplayMode));
         SoundEnabledBox.IsChecked = settings.SoundEnabled;
         CleanupMinutesBox.Text = settings.SessionCleanupMinutes.ToString();
         MaxSessionsBox.Text = settings.MaxVisibleSessions.ToString();
@@ -119,6 +121,7 @@ public partial class SettingsWindow : Window
         {
             Language = (LanguageBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "system",
             LaunchAtLogin = LaunchAtLoginBox.IsChecked == true,
+            DisplayMode = (DisplayModeBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "primary",
             SoundEnabled = SoundEnabledBox.IsChecked == true,
             SessionCleanupMinutes = Parse(CleanupMinutesBox.Text, _settings.SessionCleanupMinutes),
             MaxVisibleSessions = Parse(MaxSessionsBox.Text, _settings.MaxVisibleSessions),
