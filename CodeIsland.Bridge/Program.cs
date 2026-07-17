@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using CodeIsland.Core;
 using CodeIsland.Ipc;
 
@@ -12,8 +13,8 @@ if (mode == "serve")
 }
 else if (mode == "send" && args.Length >= 2)
 {
-    var agentEvent = JsonSerializer.Deserialize<AgentEvent>(await File.ReadAllTextAsync(args[1]))
-        ?? throw new InvalidOperationException("Input event JSON is empty.");
+    var input = args[1] == "--stdin" ? await Console.In.ReadToEndAsync() : await File.ReadAllTextAsync(args[1]);
+    var agentEvent = ParseEvent(input);
     await using var client = new PipeClient();
     await client.ConnectWithRetryAsync(3, TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(150));
     var response = await client.SendAsync(
@@ -33,6 +34,8 @@ else if (mode == "self-test")
     await ExpectAck(client, new PipeMessage(PipeMessageType.Hello, "hello-1"));
     var testEvent = new AgentEvent("event-1", "session-1", AgentKind.Codex,
         AgentEventType.SessionStart, DateTimeOffset.UtcNow, Environment.CurrentDirectory, "IPC self-test");
+    var serializedEvent = JsonSerializer.Serialize(testEvent, CreateEventJsonOptions());
+    testEvent = ParseEvent(serializedEvent);
     await ExpectAck(client, new PipeMessage(PipeMessageType.Event, "message-1", Event: testEvent));
     await ExpectAck(client, new PipeMessage(PipeMessageType.Heartbeat, "heartbeat-1"));
 
@@ -70,3 +73,13 @@ static async Task ExpectAck(PipeClient client, PipeMessage message)
     if (response.Type != PipeMessageType.Ack || response.AckFor != message.MessageId)
         throw new InvalidOperationException($"Expected ACK for {message.MessageId}.");
 }
+
+static AgentEvent ParseEvent(string json) =>
+    JsonSerializer.Deserialize<AgentEvent>(json, CreateEventJsonOptions())
+    ?? throw new InvalidOperationException("Input event JSON is empty.");
+
+static JsonSerializerOptions CreateEventJsonOptions() => new(JsonSerializerDefaults.Web)
+{
+    PropertyNameCaseInsensitive = true,
+    Converters = { new JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower) }
+};
