@@ -36,4 +36,7 @@ public static class KnownTools
             [@".gemini\settings.json", @".gemini\hooks.json"], "codeisland-gemini",
             ["SessionStart", "BeforeTool", "AfterTool", "Notification", "SessionEnd"], HookConfigurationFormat.EventMap, 10000)
     ];
+
+    public static int TimeoutFor(HookTool tool, string eventName) =>
+        tool.Agent == AgentKind.Codex && eventName == "PermissionRequest" ? 86400 : tool.CommandTimeout;
 }

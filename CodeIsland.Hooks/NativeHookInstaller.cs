@@ -24,7 +24,7 @@ public sealed class NativeHookInstaller
             {
                 ["type"] = "command",
                 ["command"] = $"{registration.Command} --source {source} --event {eventName}",
-                ["timeout"] = tool.CommandTimeout
+                ["timeout"] = KnownTools.TimeoutFor(tool, eventName)
             };
             entries.Add(tool.Format == HookConfigurationFormat.Claude
                 ? new JsonObject { ["matcher"] = "*", ["hooks"] = new JsonArray(commandHook) }
