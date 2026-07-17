@@ -8,7 +8,7 @@ public sealed record HookRegistration(
     string InstallerVersion)
 {
     public const int CurrentProtocolVersion = 1;
-    public const string CurrentInstallerVersion = "0.1.0";
+    public const string CurrentInstallerVersion = "0.2.0";
 
     public static HookRegistration Create(HookTool tool, string bridgePath) => new(
         tool.HookMarker,

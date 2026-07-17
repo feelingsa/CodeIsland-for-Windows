@@ -46,6 +46,10 @@ if (command == "self-test")
             "Codex native hooks must use the matcher-free event-map format.");
         Require(codexEntry?["hooks"]?[0]?["command"]?.GetValue<string>().Contains(tool.HookMarker) == true,
             "Codex native hook command must contain its registration id.");
+        var codexCommand = codexEntry?["hooks"]?[0]?["command"]?.GetValue<string>() ?? string.Empty;
+        Require(codexCommand.Contains("--source codex", StringComparison.Ordinal)
+                && codexCommand.Contains($"--event {tool.Events[0]}", StringComparison.Ordinal),
+            "Codex native hook command must provide source and event tags.");
         Require(manager.Install(tool, bridge).IsHealthy, "Repeated install must be idempotent.");
         Require(Directory.GetFiles(backups).Length == 1, "Idempotent install must create one backup only.");
         Require(!manager.Uninstall(tool).HookInstalled, "Uninstall must remove the marker.");

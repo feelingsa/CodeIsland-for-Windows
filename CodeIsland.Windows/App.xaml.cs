@@ -8,6 +8,7 @@ using CodeIsland.Ipc;
 using CodeIsland.Core;
 using System.Windows.Threading;
 using System.IO;
+using CodeIsland.Hooks;
 using Application = System.Windows.Application;
 
 namespace CodeIsland.Windows;
@@ -41,6 +42,7 @@ public partial class App : Application
 
         _settings = _settingsStore.Load();
         _logger.Info("Application startup.");
+        RepairOutdatedHooks();
         L10n.Apply(Resources, _settings.Language);
         Sessions = new DesktopSessionStore(_settings.MaxVisibleSessions, _settings.EventHistoryLimit);
         _sounds.Enabled = _settings.SoundEnabled;
@@ -75,6 +77,27 @@ public partial class App : Application
         _tray.DoubleClick += (_, _) => ShowPanel();
         if (e.Args.Contains("--settings", StringComparer.OrdinalIgnoreCase)) OpenSettings();
         base.OnStartup(e);
+    }
+
+    private void RepairOutdatedHooks()
+    {
+        var bridge = BridgeLocator.FindCurrent();
+        if (bridge is null) return;
+        try
+        {
+            var files = new HookFileStore();
+            var detector = new ToolDetector(store: files);
+            var manager = new HookManager(detector, files);
+            foreach (var status in detector.DetectAll().Where(value => value.HookInstalled && !value.IsHealthy))
+            {
+                manager.Repair(status.Tool, bridge);
+                _logger.Info($"Outdated hook repaired: {status.Tool.DisplayName}");
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            _logger.Error("Automatic hook repair failed", ex);
+        }
     }
 
     private void ExportDiagnostics()

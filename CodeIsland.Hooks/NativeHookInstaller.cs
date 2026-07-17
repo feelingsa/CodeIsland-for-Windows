@@ -19,10 +19,11 @@ public sealed class NativeHookInstaller
             var entries = hooks[eventName] as JsonArray ?? new JsonArray();
             hooks[eventName] = entries;
             RemoveCodeIslandEntries(entries, registration.Id);
+            var source = tool.Agent.ToString().ToLowerInvariant();
             var commandHook = new JsonObject
             {
                 ["type"] = "command",
-                ["command"] = registration.Command,
+                ["command"] = $"{registration.Command} --source {source} --event {eventName}",
                 ["timeout"] = tool.CommandTimeout
             };
             entries.Add(tool.Format == HookConfigurationFormat.Claude

@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using CodeIsland.Core;
 using CodeIsland.Ipc;
+using CodeIsland.Protocol;
 
 var mode = args.Length > 0 ? args[0].ToLowerInvariant() : "serve";
 if (mode == "serve")
@@ -13,13 +14,20 @@ if (mode == "serve")
 }
 else if (mode == "send" && args.Length >= 2)
 {
-    var input = args[1] == "--stdin" ? await Console.In.ReadToEndAsync() : await File.ReadAllTextAsync(args[1]);
-    var agentEvent = ParseEvent(input);
+    var stdin = args.Contains("--stdin", StringComparer.OrdinalIgnoreCase);
+    var source = GetOption(args, "--source");
+    var eventName = GetOption(args, "--event");
+    var file = stdin ? null : args.Skip(1).FirstOrDefault(value => !value.StartsWith("--", StringComparison.Ordinal));
+    var input = stdin ? await Console.In.ReadToEndAsync() : await File.ReadAllTextAsync(file
+        ?? throw new ArgumentException("send requires --stdin or an event JSON file."));
+    var agentEvent = ParseEvent(input, source, eventName);
     await using var client = new PipeClient();
     await client.ConnectWithRetryAsync(3, TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(150));
     var response = await client.SendAsync(
         new PipeMessage(PipeMessageType.Event, Guid.NewGuid().ToString("N"), Event: agentEvent),
-        TimeSpan.FromSeconds(3));
+        agentEvent.Type is AgentEventType.PermissionRequest or AgentEventType.Question
+            ? TimeSpan.FromHours(8)
+            : TimeSpan.FromSeconds(3));
     Console.WriteLine(PipeJson.Serialize(response));
 }
 else if (mode == "self-test")
@@ -35,7 +43,13 @@ else if (mode == "self-test")
     var testEvent = new AgentEvent("event-1", "session-1", AgentKind.Codex,
         AgentEventType.SessionStart, DateTimeOffset.UtcNow, Environment.CurrentDirectory, "IPC self-test");
     var serializedEvent = JsonSerializer.Serialize(testEvent, CreateEventJsonOptions());
-    testEvent = ParseEvent(serializedEvent);
+    testEvent = ParseEvent(serializedEvent, "codex", "SessionStart");
+    var rawCodex = ParseEvent("""
+        {"session_id":"codex-native-1","cwd":"C:\\work","tool_name":"shell","message":"running"}
+        """, "codex", "PreToolUse");
+    if (rawCodex.Agent != AgentKind.Codex || rawCodex.Type != AgentEventType.ToolStart
+        || rawCodex.SessionId != "codex-native-1" || rawCodex.ToolName != "shell")
+        throw new InvalidOperationException("Codex native hook payload normalization failed.");
     await ExpectAck(client, new PipeMessage(PipeMessageType.Event, "message-1", Event: testEvent));
     await ExpectAck(client, new PipeMessage(PipeMessageType.Heartbeat, "heartbeat-1"));
 
@@ -47,7 +61,7 @@ else if (mode == "self-test")
 }
 else
 {
-    Console.Error.WriteLine("Usage: codeisland-bridge [serve | send <event.json> | self-test]");
+    Console.Error.WriteLine("Usage: codeisland-bridge [serve | send <event.json> | send --stdin --source codex --event SessionStart | self-test]");
     return 2;
 }
 
@@ -74,9 +88,26 @@ static async Task ExpectAck(PipeClient client, PipeMessage message)
         throw new InvalidOperationException($"Expected ACK for {message.MessageId}.");
 }
 
-static AgentEvent ParseEvent(string json) =>
-    JsonSerializer.Deserialize<AgentEvent>(json, CreateEventJsonOptions())
-    ?? throw new InvalidOperationException("Input event JSON is empty.");
+static AgentEvent ParseEvent(string json, string? source = null, string? eventName = null)
+{
+    using var document = JsonDocument.Parse(json);
+    var root = document.RootElement;
+    if (root.ValueKind == JsonValueKind.Object
+        && root.TryGetProperty("eventId", out _)
+        && root.TryGetProperty("sessionId", out _)
+        && root.TryGetProperty("type", out _))
+    {
+        return JsonSerializer.Deserialize<AgentEvent>(json, CreateEventJsonOptions())
+            ?? throw new InvalidOperationException("Input event JSON is empty.");
+    }
+    return RawAgentEventNormalizer.Normalize(json, source, eventName);
+}
+
+static string? GetOption(string[] values, string name)
+{
+    var index = Array.FindIndex(values, value => value.Equals(name, StringComparison.OrdinalIgnoreCase));
+    return index >= 0 && index + 1 < values.Length ? values[index + 1] : null;
+}
 
 static JsonSerializerOptions CreateEventJsonOptions() => new(JsonSerializerDefaults.Web)
 {
