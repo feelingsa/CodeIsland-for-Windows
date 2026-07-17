@@ -42,6 +42,19 @@ public sealed class SessionStateMachine
     public bool TryGet(string sessionId, out SessionSnapshot? snapshot) =>
         _sessions.TryGetValue(sessionId, out snapshot);
 
+    public bool ResolvePending(string sessionId, string eventId, DateTimeOffset timestamp)
+    {
+        if (!_sessions.TryGetValue(sessionId, out var snapshot) || snapshot.PendingEventId != eventId)
+            return false;
+        _sessions[sessionId] = snapshot with
+        {
+            State = SessionState.Running,
+            UpdatedAt = timestamp,
+            PendingEventId = null
+        };
+        return true;
+    }
+
     public int RemoveExpired(DateTimeOffset cutoff) =>
         _sessions.Where(pair => pair.Value.UpdatedAt < cutoff)
             .Select(pair => pair.Key)

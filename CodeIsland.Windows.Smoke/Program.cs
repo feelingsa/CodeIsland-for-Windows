@@ -20,6 +20,8 @@ Require(response.Type == PipeMessageType.ActionResponse, "Response type must be 
 Require(response.Action == UserAction.Approve, "Response must preserve the user action.");
 Require(response.AckFor == request.EventId, "Response must target the pending event.");
 Require(store.PendingCount == 0, "Resolved request must be removed.");
+Require(store.Sessions.Single().State == SessionState.Running,
+    "Resolved permission request must return the session to Running.");
 
 Console.WriteLine("SMOKE PASS: permission request, pending state, approve action and response payload verified.");
 
@@ -31,6 +33,18 @@ var answer = await questionPending;
 Require(answer.Action == UserAction.Answer && answer.ResponseText == "staging",
     "Answer response must preserve user text.");
 Console.WriteLine("SMOKE PASS: question request and text answer payload verified.");
+
+var bounded = new DesktopSessionStore(maxVisibleSessions: 2, historyLimit: 2);
+for (var i = 1; i <= 3; i++)
+{
+    bounded.Apply(new AgentEvent($"history-{i}", $"bounded-{i}", AgentKind.Claude,
+        AgentEventType.SessionStart, DateTimeOffset.UtcNow.AddMinutes(-i)));
+}
+Require(bounded.Sessions.Count == 2, "Visible sessions must respect the configured maximum.");
+Require(bounded.EventHistory.Count == 2, "Event history must respect the configured maximum.");
+var removed = bounded.RemoveExpired(DateTimeOffset.UtcNow.AddMinutes(-1.5));
+Require(removed == 2, "Expired session cleanup must remove sessions older than the cutoff.");
+Console.WriteLine("SMOKE PASS: state recovery, bounded history, visible limit and expiry cleanup verified.");
 return 0;
 
 static void Require(bool condition, string message)
