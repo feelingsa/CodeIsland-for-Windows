@@ -2,6 +2,7 @@ using CodeIsland.Core;
 using CodeIsland.Ipc;
 using CodeIsland.Windows;
 using CodeIsland.Bluetooth;
+using System.IO.Compression;
 
 var store = new DesktopSessionStore();
 var request = new AgentEvent(
@@ -175,6 +176,35 @@ Require(BuddyProtocol.DecodeUplink(new byte[] { 0xF0 }) is { Kind: BuddyUplinkKi
 Require(BuddyProtocol.DecodeUplink(new byte[] { 0xE2 }) is { Kind: BuddyUplinkKind.PairResponse },
     "Buddy pending opcode must decode as a pair response.");
 Console.WriteLine("SMOKE PASS: Buddy agent, pairing, brightness and uplink frames verified.");
+var diagnosticsRoot = Path.Combine(Path.GetTempPath(), $"codeisland-diagnostics-{Guid.NewGuid():N}");
+try
+{
+    var logRoot = Path.Combine(diagnosticsRoot, "logs");
+    var logger = new AppLogger(logRoot, maxBytes: 80);
+    logger.Info("Bearer abcdefghijklmnop sk-abcdefghijklmnop "
+                + Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+    logger.Info(new string('x', 100));
+    logger.Info("rotation trigger");
+    Require(Directory.GetFiles(logRoot, "codeisland.log*").Length >= 2, "Logger must rotate oversized files.");
+    var diagnosticsZip = Path.Combine(diagnosticsRoot, "diagnostics.zip");
+    new DiagnosticsExporter().Export(diagnosticsZip, new AppSettings(), store, logRoot);
+    using var diagnosticsArchive = ZipFile.OpenRead(diagnosticsZip);
+    Require(diagnosticsArchive.GetEntry("diagnostics.json") is not null, "Diagnostics archive must contain a summary.");
+    Require(diagnosticsArchive.Entries.Any(entry => entry.FullName.StartsWith("logs/", StringComparison.Ordinal)),
+        "Diagnostics archive must contain logs.");
+    var diagnosticText = string.Join('\n', diagnosticsArchive.Entries.Select(entry =>
+    {
+        using var reader = new StreamReader(entry.Open());
+        return reader.ReadToEnd();
+    }));
+    Require(!diagnosticText.Contains("abcdefghijklmnop", StringComparison.Ordinal),
+        "Diagnostics must redact API keys and bearer tokens.");
+    Console.WriteLine("SMOKE PASS: rolling logs, diagnostics ZIP and secret redaction verified.");
+}
+finally
+{
+    if (Directory.Exists(diagnosticsRoot)) Directory.Delete(diagnosticsRoot, true);
+}
 return 0;
 
 static void Require(bool condition, string message)

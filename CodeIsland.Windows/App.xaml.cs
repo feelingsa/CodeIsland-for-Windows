@@ -7,6 +7,7 @@ using System.Windows.Forms;
 using CodeIsland.Ipc;
 using CodeIsland.Core;
 using System.Windows.Threading;
+using System.IO;
 using Application = System.Windows.Application;
 
 namespace CodeIsland.Windows;
@@ -23,6 +24,7 @@ public partial class App : Application
     private readonly NotificationSoundManager _sounds = new();
     private readonly SettingsStore _settingsStore = new();
     private SettingsWindow? _settingsWindow;
+    private readonly AppLogger _logger = new();
     public DesktopSessionStore Sessions { get; private set; } = null!;
     private AppSettings _settings = new();
 
@@ -36,11 +38,16 @@ public partial class App : Application
         }
 
         _settings = _settingsStore.Load();
+        _logger.Info("Application startup.");
         L10n.Apply(Resources, _settings.Language);
         Sessions = new DesktopSessionStore(_settings.MaxVisibleSessions, _settings.EventHistoryLimit);
         _sounds.Enabled = _settings.SoundEnabled;
         StartPipeServer();
-        Sessions.EventApplied += (_, agentEvent) => _sounds.Play(agentEvent);
+        Sessions.EventApplied += (_, agentEvent) =>
+        {
+            _sounds.Play(agentEvent);
+            _logger.Info($"Event received: agent={agentEvent.Agent} type={agentEvent.Type} session={agentEvent.SessionId}");
+        };
         _window = new MainWindow(Sessions, _settings);
         _window.Show();
         _cleanupTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
@@ -56,12 +63,34 @@ public partial class App : Application
         menu.Items.Add("打开面板", null, (_, _) => ShowPanel());
         menu.Items.Add("收起面板", null, (_, _) => _window.Hide());
         menu.Items.Add("设置", null, (_, _) => OpenSettings());
+        menu.Items.Add("导出诊断", null, (_, _) => ExportDiagnostics());
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("退出", null, (_, _) => Shutdown());
         _tray.ContextMenuStrip = menu;
         _tray.DoubleClick += (_, _) => ShowPanel();
         if (e.Args.Contains("--settings", StringComparer.OrdinalIgnoreCase)) OpenSettings();
         base.OnStartup(e);
+    }
+
+    private void ExportDiagnostics()
+    {
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Filter = "CodeIsland diagnostics (*.zip)|*.zip",
+            FileName = $"codeisland-diagnostics-{DateTime.Now:yyyyMMdd-HHmmss}.zip",
+            DefaultExt = ".zip"
+        };
+        if (dialog.ShowDialog() != true) return;
+        try
+        {
+            new DiagnosticsExporter().Export(dialog.FileName, _settings, Sessions, _logger.LogDirectory);
+            _logger.Info("Diagnostics exported.");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.Error("Diagnostics export failed", ex);
+            System.Windows.MessageBox.Show(ex.Message, "CodeIsland", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void OpenSettings()
@@ -118,6 +147,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         _pipeStop?.Cancel();
+        _logger.Info("Application exit.");
         _cleanupTimer?.Stop();
         if (_pipeTask is not null)
         {
