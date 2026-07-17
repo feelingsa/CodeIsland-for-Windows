@@ -16,12 +16,19 @@ namespace CodeIsland.Windows;
 /// </summary>
 public partial class MainWindow : Window
 {
+    private bool _expanded = true;
+    private const double ExpandedWidth = 560;
+    private const double ExpandedHeight = 160;
+    private const double CollapsedWidth = 260;
+    private const double CollapsedHeight = 64;
+
     public MainWindow()
     {
         InitializeComponent();
         Loaded += (_, _) => PositionPanel();
         StateChanged += (_, _) => { if (WindowState == WindowState.Minimized) Hide(); };
         MouseLeftButtonDown += (_, _) => DragMove();
+        MouseDoubleClick += (_, _) => TogglePanel();
     }
 
     private void PositionPanel()
@@ -29,5 +36,13 @@ public partial class MainWindow : Window
         var workArea = SystemParameters.WorkArea;
         Left = workArea.Left + (workArea.Width - Width) / 2;
         Top = workArea.Top + 14;
+    }
+
+    public void TogglePanel()
+    {
+        _expanded = !_expanded;
+        Width = _expanded ? ExpandedWidth : CollapsedWidth;
+        Height = _expanded ? ExpandedHeight : CollapsedHeight;
+        PositionPanel();
     }
 }

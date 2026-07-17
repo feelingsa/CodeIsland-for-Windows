@@ -9,7 +9,7 @@
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         Topmost="True" ShowInTaskbar="False" ResizeMode="NoResize"
         WindowStartupLocation="Manual">
-    <Border CornerRadius="18" Background="#E91B1F2A" BorderBrush="#554A5568" BorderThickness="1" Padding="18">
+    <Border x:Name="PanelBorder" CornerRadius="18" Background="#E91B1F2A" BorderBrush="#554A5568" BorderThickness="1" Padding="18">
         <Grid>
             <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
             <Border Width="54" Height="54" CornerRadius="27" Background="#FF30394A" Margin="0,0,14,0">
