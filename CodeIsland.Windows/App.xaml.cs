@@ -4,6 +4,7 @@ using System.Windows;
 
 using System.Threading;
 using System.Windows.Forms;
+using CodeIsland.Ipc;
 using Application = System.Windows.Application;
 
 namespace CodeIsland.Windows;
@@ -13,6 +14,10 @@ public partial class App : Application
     private Mutex? _instanceMutex;
     private NotifyIcon? _tray;
     private MainWindow? _window;
+    private PipeServer? _pipeServer;
+    private CancellationTokenSource? _pipeStop;
+    private Task? _pipeTask;
+    public DesktopSessionStore Sessions { get; } = new();
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -23,7 +28,8 @@ public partial class App : Application
             return;
         }
 
-        _window = new MainWindow();
+        StartPipeServer();
+        _window = new MainWindow(Sessions);
         _window.Show();
         _tray = new NotifyIcon
         {
@@ -41,6 +47,26 @@ public partial class App : Application
         base.OnStartup(e);
     }
 
+    private void StartPipeServer()
+    {
+        _pipeStop = new CancellationTokenSource();
+        _pipeServer = new PipeServer((message, _) =>
+        {
+            if (message.Type == PipeMessageType.Event && message.Event is not null)
+            {
+                Dispatcher.Invoke(() => Sessions.Apply(message.Event));
+                return ValueTask.FromResult<PipeMessage?>(new PipeMessage(
+                    PipeMessageType.Ack, Guid.NewGuid().ToString("N"), AckFor: message.MessageId));
+            }
+            if (message.Type is PipeMessageType.Hello or PipeMessageType.Heartbeat)
+                return ValueTask.FromResult<PipeMessage?>(new PipeMessage(
+                    PipeMessageType.Ack, Guid.NewGuid().ToString("N"), AckFor: message.MessageId));
+            return ValueTask.FromResult<PipeMessage?>(new PipeMessage(
+                PipeMessageType.Error, Guid.NewGuid().ToString("N"), Error: "Unsupported message."));
+        });
+        _pipeTask = _pipeServer.RunAsync(_pipeStop.Token);
+    }
+
     private void ShowPanel()
     {
         if (_window is null) return;
@@ -50,6 +76,14 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        _pipeStop?.Cancel();
+        if (_pipeTask is not null)
+        {
+            try { _pipeTask.GetAwaiter().GetResult(); }
+            catch (OperationCanceledException) { }
+        }
+        _pipeServer?.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        _pipeStop?.Dispose();
         _tray?.Dispose();
         _instanceMutex?.Dispose();
         base.OnExit(e);

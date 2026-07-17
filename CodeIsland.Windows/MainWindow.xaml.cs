@@ -22,9 +22,10 @@ public partial class MainWindow : Window
     private const double CollapsedWidth = 260;
     private const double CollapsedHeight = 64;
 
-    public MainWindow()
+    public MainWindow(DesktopSessionStore sessions)
     {
         InitializeComponent();
+        DataContext = sessions;
         Loaded += (_, _) => PositionPanel();
         StateChanged += (_, _) => { if (WindowState == WindowState.Minimized) Hide(); };
         MouseLeftButtonDown += (_, _) => DragMove();
