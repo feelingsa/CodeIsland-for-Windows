@@ -17,6 +17,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeIsland.Hooks", "CodeIsl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeIsland.Hooks.Cli", "CodeIsland.Hooks.Cli\CodeIsland.Hooks.Cli.csproj", "{31E0206B-837A-4A31-AC9B-9AD798204D4F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeIsland.Windows", "CodeIsland.Windows\CodeIsland.Windows.csproj", "{1915CF9D-9DB6-4935-B110-9301633A0CCA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -54,5 +56,9 @@ Global
 		{31E0206B-837A-4A31-AC9B-9AD798204D4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{31E0206B-837A-4A31-AC9B-9AD798204D4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{31E0206B-837A-4A31-AC9B-9AD798204D4F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1915CF9D-9DB6-4935-B110-9301633A0CCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1915CF9D-9DB6-4935-B110-9301633A0CCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1915CF9D-9DB6-4935-B110-9301633A0CCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1915CF9D-9DB6-4935-B110-9301633A0CCA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -1,0 +1,24 @@
+﻿<Window x:Class="CodeIsland.Windows.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:CodeIsland.Windows"
+        mc:Ignorable="d"
+        Title="CodeIsland" Height="160" Width="560"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Topmost="True" ShowInTaskbar="False" ResizeMode="NoResize"
+        WindowStartupLocation="Manual">
+    <Border CornerRadius="18" Background="#E91B1F2A" BorderBrush="#554A5568" BorderThickness="1" Padding="18">
+        <Grid>
+            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <Border Width="54" Height="54" CornerRadius="27" Background="#FF30394A" Margin="0,0,14,0">
+                <TextBlock Text="CI" Foreground="#FF8BE9FD" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                <TextBlock Text="CodeIsland" Foreground="White" FontSize="18" FontWeight="SemiBold"/>
+                <TextBlock Text="Windows desktop bridge is running" Foreground="#FFB8C1D1" Margin="0,6,0,0"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>
