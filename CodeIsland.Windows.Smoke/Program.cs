@@ -138,6 +138,29 @@ Require(processStore.Sessions.Single().ProcessId == 4321
         && processStore.Sessions.Single().TerminalKind == "windows-terminal",
     "Process and terminal metadata must propagate to the session snapshot.");
 Console.WriteLine("SMOKE PASS: window matching and process metadata propagation verified.");
+var launcherRoot = Path.Combine(Path.GetTempPath(), $"codeisland-launcher-{Guid.NewGuid():N}");
+try
+{
+    var launcherBin = Path.Combine(launcherRoot, "bin");
+    var workspace = Path.Combine(launcherRoot, "workspace");
+    Directory.CreateDirectory(launcherBin);
+    Directory.CreateDirectory(workspace);
+    File.WriteAllText(Path.Combine(launcherBin, "cursor.cmd"), "@echo off");
+    File.WriteAllText(Path.Combine(launcherBin, "wt.exe"), "binary");
+    var launcher = new WorkspaceLauncher();
+    var cursorTarget = launcher.Resolve(AgentKind.Cursor, null, workspace, launcherBin);
+    Require(cursorTarget?.Executable.EndsWith("cursor.cmd", StringComparison.OrdinalIgnoreCase) == true,
+        "Cursor sessions must prefer the Cursor launcher.");
+    var terminalTarget = launcher.Resolve(AgentKind.Codex, "windows-terminal", workspace, launcherBin);
+    Require(terminalTarget?.Executable.EndsWith("wt.exe", StringComparison.OrdinalIgnoreCase) == true
+            && terminalTarget.Arguments.StartsWith("-d ", StringComparison.Ordinal),
+        "Terminal sessions must prefer Windows Terminal with a working-directory argument.");
+    Console.WriteLine("SMOKE PASS: Cursor and Windows Terminal fallback launch resolution verified.");
+}
+finally
+{
+    if (Directory.Exists(launcherRoot)) Directory.Delete(launcherRoot, true);
+}
 return 0;
 
 static void Require(bool condition, string message)

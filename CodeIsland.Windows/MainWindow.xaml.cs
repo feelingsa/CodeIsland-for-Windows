@@ -33,6 +33,7 @@ public partial class MainWindow : Window
     private HwndSource? _source;
     private AppSettings _settings;
     private readonly TerminalActivator _terminalActivator = new();
+    private readonly WorkspaceLauncher _workspaceLauncher = new();
     public string HotKeyStatus => _hotKeys?.RegistrationSummary ?? "Shortcuts are not registered yet.";
 
     public MainWindow(DesktopSessionStore sessions, AppSettings settings)
@@ -106,7 +107,8 @@ public partial class MainWindow : Window
     {
         if (sender is not WpfButton { Tag: SessionSnapshot snapshot }) return;
         var activated = _terminalActivator.TryActivate(snapshot.ProcessId, snapshot.WorkingDirectory);
-        if (!activated) ToolTip = "No matching terminal or IDE window was found.";
+        if (!activated) activated = _workspaceLauncher.TryLaunch(snapshot.Agent, snapshot.TerminalKind, snapshot.WorkingDirectory);
+        if (!activated) ToolTip = "No matching terminal or IDE was found, and no fallback launcher is available.";
     }
 
     private void PositionPanel()
