@@ -12,6 +12,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Windows.Interop;
+using System.Windows.Media.Animation;
+using CodeIsland.Core;
 
 namespace CodeIsland.Windows;
 
@@ -33,6 +35,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         _sessions = sessions;
+        _sessions.EventApplied += OnEventApplied;
         DataContext = sessions;
         Loaded += (_, _) => PositionPanel();
         SourceInitialized += (_, _) =>
@@ -42,7 +45,11 @@ public partial class MainWindow : Window
                     () => _sessions.ResolveCurrent(UserAction.Approve),
                     () => _sessions.ResolveCurrent(UserAction.Deny));
         };
-        Closed += (_, _) => _hotKeys?.Dispose();
+        Closed += (_, _) =>
+        {
+            _hotKeys?.Dispose();
+            _sessions.EventApplied -= OnEventApplied;
+        };
         StateChanged += (_, _) => { if (WindowState == WindowState.Minimized) Hide(); };
         MouseLeftButtonDown += (_, _) => DragMove();
         MouseDoubleClick += (_, _) => TogglePanel();
@@ -88,5 +95,19 @@ public partial class MainWindow : Window
         Width = _expanded ? ExpandedWidth : CollapsedWidth;
         Height = _expanded ? ExpandedHeight : CollapsedHeight;
         PositionPanel();
+    }
+
+    private void OnEventApplied(object? sender, AgentEvent agentEvent)
+    {
+        if (!_expanded && agentEvent.Type is AgentEventType.PermissionRequest or AgentEventType.Question or AgentEventType.Error)
+            TogglePanel();
+        if (!SystemParameters.ClientAreaAnimation) return;
+        var easing = new QuadraticEase { EasingMode = EasingMode.EaseOut };
+        PanelScale.BeginAnimation(ScaleTransform.ScaleXProperty,
+            new DoubleAnimation(0.96, 1, TimeSpan.FromMilliseconds(180)) { EasingFunction = easing });
+        PanelScale.BeginAnimation(ScaleTransform.ScaleYProperty,
+            new DoubleAnimation(0.96, 1, TimeSpan.FromMilliseconds(180)) { EasingFunction = easing });
+        PanelBorder.BeginAnimation(OpacityProperty,
+            new DoubleAnimation(0.72, 1, TimeSpan.FromMilliseconds(180)) { EasingFunction = easing });
     }
 }

@@ -9,7 +9,8 @@
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         Topmost="True" ShowInTaskbar="False" ResizeMode="NoResize"
         WindowStartupLocation="Manual">
-    <Border x:Name="PanelBorder" CornerRadius="18" Background="#E91B1F2A" BorderBrush="#554A5568" BorderThickness="1" Padding="18">
+    <Border x:Name="PanelBorder" CornerRadius="18" Background="#E91B1F2A" BorderBrush="#554A5568" BorderThickness="1" Padding="18" RenderTransformOrigin="0.5,0">
+        <Border.RenderTransform><ScaleTransform x:Name="PanelScale" ScaleX="1" ScaleY="1"/></Border.RenderTransform>
         <Grid>
             <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
             <Border Width="54" Height="54" CornerRadius="27" Background="#FF30394A" Margin="0,0,14,0">
