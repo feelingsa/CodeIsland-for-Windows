@@ -24,6 +24,31 @@ public sealed class PipeClient : IAsyncDisposable
         _writer = new StreamWriter(_pipe, new UTF8Encoding(false), leaveOpen: true) { AutoFlush = true };
     }
 
+    public async Task ConnectWithRetryAsync(
+        int maxAttempts,
+        TimeSpan connectTimeout,
+        TimeSpan retryDelay,
+        CancellationToken cancellationToken = default)
+    {
+        if (maxAttempts < 1) throw new ArgumentOutOfRangeException(nameof(maxAttempts));
+        Exception? lastError = null;
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                await ConnectAsync(connectTimeout, cancellationToken);
+                return;
+            }
+            catch (Exception ex) when (ex is TimeoutException or IOException or OperationCanceledException)
+            {
+                lastError = ex;
+                if (cancellationToken.IsCancellationRequested) throw;
+                if (attempt < maxAttempts) await Task.Delay(retryDelay, cancellationToken);
+            }
+        }
+        throw new IOException($"Could not connect to CodeIsland pipe after {maxAttempts} attempts.", lastError);
+    }
+
     public async Task<PipeMessage> SendAsync(PipeMessage message, TimeSpan timeout, CancellationToken cancellationToken = default)
     {
         if (_writer is null || _reader is null) throw new InvalidOperationException("Pipe is not connected.");
