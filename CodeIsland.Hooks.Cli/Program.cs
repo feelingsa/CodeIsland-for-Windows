@@ -88,6 +88,48 @@ if (command == "self-test")
         Require(File.ReadAllText(geminiConfig).Contains("oauth", StringComparison.Ordinal),
             "Gemini user settings must be preserved.");
         Require(!manager.Uninstall(gemini).HookInstalled, "Gemini uninstall must remove registration.");
+
+        var cursor = KnownTools.All.Single(value => value.DisplayName == "Cursor");
+        File.WriteAllText(Path.Combine(bin, "cursor.cmd"), "@echo off");
+        var cursorConfig = Path.Combine(home, cursor.ConfigPaths[0]);
+        Directory.CreateDirectory(Path.GetDirectoryName(cursorConfig)!);
+        File.WriteAllText(cursorConfig, "{\"userSetting\":true}");
+        Require(manager.Install(cursor, bridge).IsHealthy, "Cursor install must be healthy.");
+        var cursorRoot = JsonNode.Parse(File.ReadAllText(cursorConfig))!.AsObject();
+        Require(cursorRoot["version"]?.GetValue<int>() == 1, "Cursor hooks must declare format version 1.");
+        Require(cursorRoot["hooks"]?[cursor.Events[0]]?[0]?["matcher"]?.GetValue<string>() == "*",
+            "Cursor event entries must include a matcher.");
+        Require(!manager.Uninstall(cursor).HookInstalled, "Cursor uninstall must remove registration.");
+
+        var factory = KnownTools.All.Single(value => value.DisplayName == "Factory Droid");
+        File.WriteAllText(Path.Combine(bin, "droid.cmd"), "@echo off");
+        var factoryConfig = Path.Combine(home, factory.ConfigPaths[0]);
+        Directory.CreateDirectory(Path.GetDirectoryName(factoryConfig)!);
+        File.WriteAllText(factoryConfig, "{}");
+        Require(manager.Install(factory, bridge).IsHealthy, "Factory Droid install must be healthy.");
+        Require(File.ReadAllText(factoryConfig).Contains("--source droid", StringComparison.Ordinal),
+            "Factory hooks must use the droid source tag.");
+        Require(!manager.Uninstall(factory).HookInstalled, "Factory uninstall must remove registration.");
+
+        foreach (var additionalToolName in new[] { "Qoder", "CodeBuddy", "GitHub Copilot CLI" })
+        {
+            var additionalTool = KnownTools.All.Single(value => value.DisplayName == additionalToolName);
+            var executableName = additionalTool.ExecutableNames.First(name => name.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase));
+            File.WriteAllText(Path.Combine(bin, executableName), "@echo off");
+            var additionalConfig = Path.Combine(home, additionalTool.ConfigPaths[0]);
+            Directory.CreateDirectory(Path.GetDirectoryName(additionalConfig)!);
+            File.WriteAllText(additionalConfig, "{\"preserved\":true}");
+
+            Require(manager.Install(additionalTool, bridge).IsHealthy,
+                $"{additionalToolName} install must be healthy.");
+            var installedText = File.ReadAllText(additionalConfig);
+            Require(installedText.Contains($"--source {additionalTool.Agent.ToString().ToLowerInvariant()}", StringComparison.Ordinal),
+                $"{additionalToolName} hooks must include the expected source tag.");
+            Require(manager.Uninstall(additionalTool).HookInstalled == false,
+                $"{additionalToolName} uninstall must remove registration.");
+            Require(File.ReadAllText(additionalConfig).Contains("preserved", StringComparison.Ordinal),
+                $"{additionalToolName} uninstall must preserve user configuration.");
+        }
         Console.WriteLine("SELF-TEST PASS: detect, backup, install, idempotency, health and uninstall verified.");
         return 0;
     }

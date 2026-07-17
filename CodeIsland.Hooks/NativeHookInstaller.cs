@@ -12,6 +12,7 @@ public sealed class NativeHookInstaller
     {
         var backup = _store.Install(configPath, registration);
         var root = ParseRoot(configPath);
+        if (tool.Format == HookConfigurationFormat.Cursor) root["version"] = 1;
         var hooks = root["hooks"] as JsonObject ?? new JsonObject();
         root["hooks"] = hooks;
         foreach (var eventName in tool.Events)
@@ -19,14 +20,14 @@ public sealed class NativeHookInstaller
             var entries = hooks[eventName] as JsonArray ?? new JsonArray();
             hooks[eventName] = entries;
             RemoveCodeIslandEntries(entries, registration.Id);
-            var source = tool.Agent.ToString().ToLowerInvariant();
+            var source = tool.SourceTag ?? tool.Agent.ToString().ToLowerInvariant();
             var commandHook = new JsonObject
             {
                 ["type"] = "command",
                 ["command"] = $"{registration.Command} --source {source} --event {eventName}",
                 ["timeout"] = KnownTools.TimeoutFor(tool, eventName)
             };
-            entries.Add(tool.Format == HookConfigurationFormat.Claude
+            entries.Add(tool.Format is HookConfigurationFormat.Claude or HookConfigurationFormat.Cursor
                 ? new JsonObject { ["matcher"] = "*", ["hooks"] = new JsonArray(commandHook) }
                 : new JsonObject { ["hooks"] = new JsonArray(commandHook) });
         }
