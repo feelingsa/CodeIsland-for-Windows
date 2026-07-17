@@ -80,8 +80,15 @@ try
         "Numeric settings must be clamped to supported ranges.");
     Require(L10n.Get("ApproveText", loaded.Language) == "允许", "Chinese resources must resolve.");
     Require(L10n.Get("ApproveText", "en-US") == "Approve", "English resources must resolve.");
+    var exported = Path.Combine(settingsRoot, "exported.json");
+    settingsStore.Export(exported, loaded);
+    Require(SettingsStore.Import(exported) == loaded, "Exported settings must import without data loss.");
     File.WriteAllText(settingsStore.FilePath, "{broken");
     Require(settingsStore.Load() == new AppSettings(), "Malformed settings must fall back to defaults.");
+    var invalidImportRejected = false;
+    try { SettingsStore.Import(settingsStore.FilePath); }
+    catch (InvalidDataException) { invalidImportRejected = true; }
+    Require(invalidImportRejected, "Malformed imported settings must be rejected.");
     Console.WriteLine("SMOKE PASS: settings round-trip, validation, fallback and localization verified.");
 }
 finally

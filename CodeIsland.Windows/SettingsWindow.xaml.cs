@@ -19,12 +19,7 @@ public partial class SettingsWindow : Window
         _store = store;
         _settings = settings;
         _applied = applied;
-        SelectLanguage(settings.Language);
-        LaunchAtLoginBox.IsChecked = settings.LaunchAtLogin || _startup.IsEnabled();
-        SoundEnabledBox.IsChecked = settings.SoundEnabled;
-        CleanupMinutesBox.Text = settings.SessionCleanupMinutes.ToString();
-        MaxSessionsBox.Text = settings.MaxVisibleSessions.ToString();
-        HistoryLimitBox.Text = settings.EventHistoryLimit.ToString();
+        ApplyToForm(settings, includeRegistryState: true);
         RefreshHooks();
     }
 
@@ -34,18 +29,19 @@ public partial class SettingsWindow : Window
             .First(item => Equals(item.Tag, language));
     }
 
+    private void ApplyToForm(AppSettings settings, bool includeRegistryState = false)
+    {
+        SelectLanguage(settings.Language);
+        LaunchAtLoginBox.IsChecked = settings.LaunchAtLogin || includeRegistryState && _startup.IsEnabled();
+        SoundEnabledBox.IsChecked = settings.SoundEnabled;
+        CleanupMinutesBox.Text = settings.SessionCleanupMinutes.ToString();
+        MaxSessionsBox.Text = settings.MaxVisibleSessions.ToString();
+        HistoryLimitBox.Text = settings.EventHistoryLimit.ToString();
+    }
+
     private void OnSave(object sender, RoutedEventArgs e)
     {
-        _settings = _settings with
-        {
-            Language = (LanguageBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "system",
-            LaunchAtLogin = LaunchAtLoginBox.IsChecked == true,
-            SoundEnabled = SoundEnabledBox.IsChecked == true,
-            SessionCleanupMinutes = Parse(CleanupMinutesBox.Text, _settings.SessionCleanupMinutes),
-            MaxVisibleSessions = Parse(MaxSessionsBox.Text, _settings.MaxVisibleSessions),
-            EventHistoryLimit = Parse(HistoryLimitBox.Text, _settings.EventHistoryLimit)
-        };
-        _settings = _settings.Validate();
+        _settings = ReadForm();
         _store.Save(_settings);
         try
         {
@@ -62,6 +58,51 @@ public partial class SettingsWindow : Window
 
     private static int Parse(string text, int fallback) => int.TryParse(text, out var value) ? value : fallback;
     private void OnCancel(object sender, RoutedEventArgs e) => DialogResult = false;
+    private void OnDefaults(object sender, RoutedEventArgs e)
+    {
+        _settings = new AppSettings();
+        ApplyToForm(_settings);
+        GeneralStatus.Text = "Defaults loaded. Select Save to apply them.";
+    }
+
+    private void OnImport(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog { Filter = "CodeIsland settings (*.json)|*.json|All files (*.*)|*.*" };
+        if (dialog.ShowDialog(this) != true) return;
+        try
+        {
+            _settings = SettingsStore.Import(dialog.FileName);
+            ApplyToForm(_settings);
+            GeneralStatus.Text = $"Imported {Path.GetFileName(dialog.FileName)}. Select Save to apply.";
+        }
+        catch (InvalidDataException ex)
+        {
+            GeneralStatus.Text = ex.Message;
+        }
+    }
+
+    private void OnExport(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Filter = "CodeIsland settings (*.json)|*.json",
+            FileName = "codeisland-settings.json",
+            DefaultExt = ".json"
+        };
+        if (dialog.ShowDialog(this) != true) return;
+        _store.Export(dialog.FileName, ReadForm());
+        GeneralStatus.Text = $"Exported to {Path.GetFileName(dialog.FileName)}.";
+    }
+
+    private AppSettings ReadForm() => (_settings with
+    {
+        Language = (LanguageBox.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "system",
+        LaunchAtLogin = LaunchAtLoginBox.IsChecked == true,
+        SoundEnabled = SoundEnabledBox.IsChecked == true,
+        SessionCleanupMinutes = Parse(CleanupMinutesBox.Text, _settings.SessionCleanupMinutes),
+        MaxVisibleSessions = Parse(MaxSessionsBox.Text, _settings.MaxVisibleSessions),
+        EventHistoryLimit = Parse(HistoryLimitBox.Text, _settings.EventHistoryLimit)
+    }).Validate();
     private void OnRefreshHooks(object sender, RoutedEventArgs e) => RefreshHooks();
     private void RefreshHooks() => HooksGrid.ItemsSource = new ToolDetector().DetectAll()
         .Select(value => new HookStatusRow(value.Tool, value.ExecutablePath is not null,

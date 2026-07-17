@@ -34,4 +34,20 @@ public sealed class SettingsStore
         File.WriteAllText(temporary, JsonSerializer.Serialize(settings.Validate(), Options));
         File.Move(temporary, FilePath, true);
     }
+
+    public void Export(string destinationPath, AppSettings settings) =>
+        File.WriteAllText(destinationPath, JsonSerializer.Serialize(settings.Validate(), Options));
+
+    public static AppSettings Import(string sourcePath)
+    {
+        try
+        {
+            return (JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(sourcePath), Options)
+                ?? new AppSettings()).Validate();
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidDataException("The selected settings file is not valid JSON.", ex);
+        }
+    }
 }
