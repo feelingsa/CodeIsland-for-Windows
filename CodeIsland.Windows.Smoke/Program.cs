@@ -218,6 +218,38 @@ Require(FullscreenDetector.IsSameBounds(new System.Drawing.Rectangle(0, 0, 1920,
 Require(!FullscreenDetector.IsSameBounds(new System.Drawing.Rectangle(0, 0, 1920, 1040), monitorBounds),
     "A window leaving taskbar space must not be detected as full screen.");
 Console.WriteLine("SMOKE PASS: full-screen monitor bounds detection verified.");
+var transcriptRoot = Path.Combine(Path.GetTempPath(), $"codeisland-transcript-{Guid.NewGuid():N}");
+try
+{
+    Directory.CreateDirectory(transcriptRoot);
+    var transcript = Path.Combine(transcriptRoot, "rollout-test.jsonl");
+    File.WriteAllLines(transcript,
+    [
+        "{\"timestamp\":\"2026-07-17T08:00:00Z\",\"type\":\"session_meta\",\"payload\":{\"session_id\":\"live-session\",\"cwd\":\"E:\\\\Demo\\\\CodexStatus\"}}",
+        "{\"timestamp\":\"2026-07-17T08:00:01Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"task_started\"}}"
+    ]);
+    var transcriptEvents = new List<AgentEvent>();
+    using var liveSignal = new ManualResetEventSlim();
+    using var tailer = new CodexSessionTailer(transcriptRoot);
+    tailer.EventReceived += (_, agentEvent) =>
+    {
+        lock (transcriptEvents) transcriptEvents.Add(agentEvent);
+        if (agentEvent.ToolName == "shell") liveSignal.Set();
+    };
+    tailer.Start(TimeSpan.FromDays(1));
+    lock (transcriptEvents)
+        Require(transcriptEvents.Any(value => value.SessionId == "live-session"),
+            "Tailer startup must recover an existing active Codex session.");
+    File.AppendAllText(transcript, Environment.NewLine
+        + "{\"timestamp\":\"2026-07-17T08:00:02Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call\",\"call_id\":\"call-1\",\"name\":\"shell\"}}"
+        + Environment.NewLine);
+    Require(liveSignal.Wait(TimeSpan.FromSeconds(5)), "Tailer must emit events appended after startup.");
+    Console.WriteLine("SMOKE PASS: Codex active-session recovery and live JSONL tailing verified.");
+}
+finally
+{
+    if (Directory.Exists(transcriptRoot)) Directory.Delete(transcriptRoot, true);
+}
 return 0;
 
 static void Require(bool condition, string message)

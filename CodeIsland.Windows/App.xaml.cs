@@ -24,6 +24,7 @@ public partial class App : Application
     private DispatcherTimer? _cleanupTimer;
     private DispatcherTimer? _fullscreenTimer;
     private bool _fullscreenSuppressed;
+    private CodexSessionTailer? _codexTailer;
     private readonly NotificationSoundManager _sounds = new();
     private readonly SettingsStore _settingsStore = new();
     private SettingsWindow? _settingsWindow;
@@ -52,6 +53,9 @@ public partial class App : Application
             _sounds.Play(agentEvent);
             _logger.Info($"Event received: agent={agentEvent.Agent} type={agentEvent.Type} session={agentEvent.SessionId}");
         };
+        _codexTailer = new CodexSessionTailer();
+        _codexTailer.EventReceived += (_, agentEvent) => Dispatcher.Invoke(() => Sessions.Apply(agentEvent));
+        _codexTailer.Start();
         _window = new MainWindow(Sessions, _settings);
         _window.Show();
         _fullscreenTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
@@ -196,6 +200,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         _pipeStop?.Cancel();
+        _codexTailer?.Dispose();
         _logger.Info("Application exit.");
         _cleanupTimer?.Stop();
         _fullscreenTimer?.Stop();
