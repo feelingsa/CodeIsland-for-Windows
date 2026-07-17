@@ -21,6 +21,8 @@ public partial class App : Application
     private Task? _pipeTask;
     private DispatcherTimer? _cleanupTimer;
     private readonly NotificationSoundManager _sounds = new();
+    private readonly SettingsStore _settingsStore = new();
+    private SettingsWindow? _settingsWindow;
     public DesktopSessionStore Sessions { get; private set; } = null!;
     private AppSettings _settings = new();
 
@@ -33,7 +35,7 @@ public partial class App : Application
             return;
         }
 
-        _settings = new SettingsStore().Load();
+        _settings = _settingsStore.Load();
         L10n.Apply(Resources, _settings.Language);
         Sessions = new DesktopSessionStore(_settings.MaxVisibleSessions, _settings.EventHistoryLimit);
         _sounds.Enabled = _settings.SoundEnabled;
@@ -53,11 +55,32 @@ public partial class App : Application
         var menu = new ContextMenuStrip();
         menu.Items.Add("打开面板", null, (_, _) => ShowPanel());
         menu.Items.Add("收起面板", null, (_, _) => _window.Hide());
+        menu.Items.Add("设置", null, (_, _) => OpenSettings());
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("退出", null, (_, _) => Shutdown());
         _tray.ContextMenuStrip = menu;
         _tray.DoubleClick += (_, _) => ShowPanel();
+        if (e.Args.Contains("--settings", StringComparer.OrdinalIgnoreCase)) OpenSettings();
         base.OnStartup(e);
+    }
+
+    private void OpenSettings()
+    {
+        if (_settingsWindow is { IsVisible: true })
+        {
+            _settingsWindow.Activate();
+            return;
+        }
+        _settingsWindow = new SettingsWindow(_settingsStore, _settings, ApplySettings);
+        _settingsWindow.Closed += (_, _) => _settingsWindow = null;
+        _settingsWindow.Show();
+    }
+
+    private void ApplySettings(AppSettings settings)
+    {
+        _settings = settings;
+        _sounds.Enabled = settings.SoundEnabled;
+        L10n.Apply(Resources, settings.Language);
     }
 
     private void StartPipeServer()

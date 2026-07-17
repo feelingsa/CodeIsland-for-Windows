@@ -1,0 +1,78 @@
+<Window x:Class="CodeIsland.Windows.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="CodeIsland Settings" Width="720" Height="520" WindowStartupLocation="CenterScreen"
+        Background="#FFF5F7FA" MinWidth="620" MinHeight="440">
+    <DockPanel Margin="16">
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
+            <Button Content="Cancel" Click="OnCancel" Padding="18,7" Margin="0,0,8,0"/>
+            <Button Content="Save" Click="OnSave" Padding="18,7" IsDefault="True"/>
+        </StackPanel>
+        <TabControl>
+            <TabItem Header="General">
+                <StackPanel Margin="18">
+                    <TextBlock Text="Language" FontWeight="SemiBold"/>
+                    <ComboBox x:Name="LanguageBox" Width="220" HorizontalAlignment="Left" Margin="0,7,0,18">
+                        <ComboBoxItem Content="System" Tag="system"/><ComboBoxItem Content="简体中文" Tag="zh-CN"/><ComboBoxItem Content="English" Tag="en-US"/>
+                    </ComboBox>
+                    <TextBlock Text="Settings are stored in your roaming AppData folder." Foreground="#FF596273"/>
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="Behavior">
+                <StackPanel Margin="18">
+                    <TextBlock Text="Session cleanup (minutes)" FontWeight="SemiBold"/>
+                    <TextBox x:Name="CleanupMinutesBox" Width="120" HorizontalAlignment="Left" Margin="0,7,0,18"/>
+                    <TextBlock Text="Inactive sessions are removed automatically after this period." Foreground="#FF596273"/>
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="Appearance">
+                <Grid Margin="18">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="220"/><ColumnDefinition Width="140"/></Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                    <TextBlock Text="Maximum visible sessions" VerticalAlignment="Center"/>
+                    <TextBox x:Name="MaxSessionsBox" Grid.Column="1" Margin="8"/>
+                    <TextBlock Grid.Row="1" Text="Event history limit" VerticalAlignment="Center"/>
+                    <TextBox x:Name="HistoryLimitBox" Grid.Row="1" Grid.Column="1" Margin="8"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Sound">
+                <StackPanel Margin="18">
+                    <CheckBox x:Name="SoundEnabledBox" Content="Play sounds for session events"/>
+                    <TextBlock Text="Sounds are played for start, approval, completion and error events." Foreground="#FF596273" Margin="0,12,0,0"/>
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="Hooks">
+                <Grid Margin="18">
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                    <Button Content="Refresh" Click="OnRefreshHooks" Width="90" HorizontalAlignment="Left" Padding="10,5"/>
+                    <DataGrid x:Name="HooksGrid" Grid.Row="1" Margin="0,12,0,0" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Tool" Binding="{Binding Tool.DisplayName}" Width="140"/>
+                            <DataGridCheckBoxColumn Header="Executable" Binding="{Binding HasExecutable}" Width="90"/>
+                            <DataGridCheckBoxColumn Header="Hook" Binding="{Binding HookInstalled}" Width="70"/>
+                            <DataGridCheckBoxColumn Header="Healthy" Binding="{Binding IsHealthy}" Width="70"/>
+                            <DataGridTextColumn Header="Status" Binding="{Binding Problem}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Shortcuts">
+                <Grid Margin="18">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="220"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+                    <TextBlock Text="Toggle panel"/><TextBlock Grid.Column="1" Text="Ctrl+Shift+I"/>
+                    <TextBlock Grid.Row="1" Text="Approve request"/><TextBlock Grid.Row="1" Grid.Column="1" Text="Ctrl+Shift+A"/>
+                    <TextBlock Grid.Row="2" Text="Deny request"/><TextBlock Grid.Row="2" Grid.Column="1" Text="Ctrl+Shift+D"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="About">
+                <StackPanel Margin="18">
+                    <TextBlock Text="CodeIsland for Windows" FontSize="22" FontWeight="SemiBold"/>
+                    <TextBlock Text="Version 0.1.0" Margin="0,8,0,0"/>
+                    <TextBlock Text="Real-time AI coding agent status panel." Foreground="#FF596273" Margin="0,14,0,0"/>
+                    <TextBlock Text="MIT License" Margin="0,18,0,0"/>
+                </StackPanel>
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>
