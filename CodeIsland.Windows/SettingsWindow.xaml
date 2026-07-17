@@ -43,7 +43,7 @@
             </TabItem>
             <TabItem Header="Hooks">
                 <Grid Margin="18">
-                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
                     <Button Content="Refresh" Click="OnRefreshHooks" Width="90" HorizontalAlignment="Left" Padding="10,5"/>
                     <DataGrid x:Name="HooksGrid" Grid.Row="1" Margin="0,12,0,0" AutoGenerateColumns="False" IsReadOnly="True" HeadersVisibility="Column">
                         <DataGrid.Columns>
@@ -52,8 +52,18 @@
                             <DataGridCheckBoxColumn Header="Hook" Binding="{Binding HookInstalled}" Width="70"/>
                             <DataGridCheckBoxColumn Header="Healthy" Binding="{Binding IsHealthy}" Width="70"/>
                             <DataGridTextColumn Header="Status" Binding="{Binding Problem}" Width="*"/>
+                            <DataGridTemplateColumn Header="Actions" Width="220">
+                                <DataGridTemplateColumn.CellTemplate><DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="Install" Tag="{Binding Tool}" Click="OnInstallHook" Padding="7,3" Margin="0,0,4,0"/>
+                                        <Button Content="Repair" Tag="{Binding Tool}" Click="OnRepairHook" Padding="7,3" Margin="0,0,4,0"/>
+                                        <Button Content="Uninstall" Tag="{Binding Tool}" Click="OnUninstallHook" Padding="7,3"/>
+                                    </StackPanel>
+                                </DataTemplate></DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
+                    <TextBlock x:Name="HookOperationStatus" Grid.Row="2" Foreground="#FF596273" Margin="0,8,0,0" TextWrapping="Wrap"/>
                 </Grid>
             </TabItem>
             <TabItem Header="Shortcuts">

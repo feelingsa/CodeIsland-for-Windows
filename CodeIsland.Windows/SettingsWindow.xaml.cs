@@ -1,6 +1,8 @@
 using System.Windows;
 using System.Windows.Controls;
 using CodeIsland.Hooks;
+using System.IO;
+using WpfButton = System.Windows.Controls.Button;
 
 namespace CodeIsland.Windows;
 
@@ -54,4 +56,36 @@ public partial class SettingsWindow : Window
             value.HookInstalled, value.IsHealthy, value.Problem)).ToArray();
 
     private sealed record HookStatusRow(HookTool Tool, bool HasExecutable, bool HookInstalled, bool IsHealthy, string? Problem);
+
+    private void OnInstallHook(object sender, RoutedEventArgs e) => RunHookAction(sender, HookOperation.Install);
+    private void OnRepairHook(object sender, RoutedEventArgs e) => RunHookAction(sender, HookOperation.Repair);
+    private void OnUninstallHook(object sender, RoutedEventArgs e) => RunHookAction(sender, HookOperation.Uninstall);
+
+    private void RunHookAction(object sender, HookOperation operation)
+    {
+        if (sender is not WpfButton { Tag: HookTool tool }) return;
+        try
+        {
+            var bridge = BridgeLocator.FindCurrent();
+            if (operation != HookOperation.Uninstall && bridge is null)
+                throw new FileNotFoundException("CodeIsland.Bridge.exe was not found. Build or reinstall CodeIsland.");
+            var fileStore = new HookFileStore();
+            var manager = new HookManager(new ToolDetector(store: fileStore), fileStore);
+            var status = operation switch
+            {
+                HookOperation.Install => manager.Install(tool, bridge!),
+                HookOperation.Repair => manager.Repair(tool, bridge!),
+                HookOperation.Uninstall => manager.Uninstall(tool),
+                _ => throw new ArgumentOutOfRangeException(nameof(operation))
+            };
+            HookOperationStatus.Text = $"{tool.DisplayName}: {operation} completed. Healthy={status.IsHealthy}";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            HookOperationStatus.Text = $"{tool.DisplayName}: {ex.Message}";
+        }
+        RefreshHooks();
+    }
+
+    private enum HookOperation { Install, Repair, Uninstall }
 }

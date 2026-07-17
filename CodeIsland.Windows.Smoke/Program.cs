@@ -88,6 +88,27 @@ finally
 {
     if (Directory.Exists(settingsRoot)) Directory.Delete(settingsRoot, true);
 }
+
+var locatorRoot = Path.Combine(Path.GetTempPath(), $"codeisland-locator-{Guid.NewGuid():N}");
+try
+{
+    var appDirectory = Path.Combine(locatorRoot, "app");
+    Directory.CreateDirectory(appDirectory);
+    var packagedBridge = Path.Combine(appDirectory, "CodeIsland.Bridge.exe");
+    File.WriteAllText(packagedBridge, "bridge");
+    Require(BridgeLocator.Find(appDirectory) == packagedBridge, "Packaged Bridge must be located beside the app.");
+    File.Delete(packagedBridge);
+    var developmentBridge = Path.Combine(locatorRoot, "CodeIsland.Bridge", "bin", "Debug", "net8.0", "CodeIsland.Bridge.exe");
+    Directory.CreateDirectory(Path.GetDirectoryName(developmentBridge)!);
+    File.WriteAllText(developmentBridge, "bridge");
+    Require(BridgeLocator.Find(appDirectory, locatorRoot) == developmentBridge,
+        "Development Bridge must be found from the repository root.");
+    Console.WriteLine("SMOKE PASS: packaged and development Bridge location verified.");
+}
+finally
+{
+    if (Directory.Exists(locatorRoot)) Directory.Delete(locatorRoot, true);
+}
 return 0;
 
 static void Require(bool condition, string message)
