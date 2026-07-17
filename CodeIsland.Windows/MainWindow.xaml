@@ -20,7 +20,7 @@
                     <TextBlock Foreground="White" FontSize="18" FontWeight="SemiBold">
                         <Run Text="CodeIsland"/><Run Text="  "/><Run Text="{Binding SessionCount, Mode=OneWay}"/>
                     </TextBlock>
-                    <TextBlock Text="Waiting for AI coding sessions" Foreground="#FFB8C1D1" Margin="0,6,0,0">
+                    <TextBlock Text="{DynamicResource IdleText}" Foreground="#FFB8C1D1" Margin="0,6,0,0">
                         <TextBlock.Style>
                             <Style TargetType="TextBlock">
                                 <Setter Property="Visibility" Value="Collapsed"/>
@@ -37,16 +37,16 @@
                                     <TextBlock Text="{Binding Agent}" Foreground="#FF8BE9FD"/>
                                     <TextBlock Grid.Column="1" Text="{Binding State}" Foreground="#FFF4C86A"/>
                                     <TextBlock Grid.Column="2" Text="{Binding LastMessage}" Foreground="#FFD5DAE4" TextTrimming="CharacterEllipsis"/>
-                                    <Button Grid.Column="3" Content="×" Tag="{Binding SessionId}" Click="OnCloseSessionClick" ToolTip="关闭会话" Width="24" Height="22" Padding="0"/>
+                                    <Button Grid.Column="3" Content="×" Tag="{Binding SessionId}" Click="OnCloseSessionClick" ToolTip="{DynamicResource CloseSessionText}" Width="24" Height="22" Padding="0"/>
                                     <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="0,7,0,0">
                                         <StackPanel.Style>
                                             <Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/>
                                                 <Style.Triggers><DataTrigger Binding="{Binding State}" Value="WaitingForPermission"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
                                             </Style>
                                         </StackPanel.Style>
-                                        <Button Content="允许" Tag="{Binding PendingEventId}" Click="OnApproveClick" Padding="10,4" Margin="0,0,6,0"/>
-                                        <Button Content="拒绝" Tag="{Binding PendingEventId}" Click="OnDenyClick" Padding="10,4" Margin="0,0,6,0"/>
-                                        <Button Content="始终允许" Tag="{Binding PendingEventId}" Click="OnAlwaysAllowClick" Padding="10,4"/>
+                                        <Button Content="{DynamicResource ApproveText}" Tag="{Binding PendingEventId}" Click="OnApproveClick" Padding="10,4" Margin="0,0,6,0"/>
+                                        <Button Content="{DynamicResource DenyText}" Tag="{Binding PendingEventId}" Click="OnDenyClick" Padding="10,4" Margin="0,0,6,0"/>
+                                        <Button Content="{DynamicResource AlwaysAllowText}" Tag="{Binding PendingEventId}" Click="OnAlwaysAllowClick" Padding="10,4"/>
                                     </StackPanel>
                                     <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="0,7,0,0">
                                         <StackPanel.Style>
@@ -55,7 +55,7 @@
                                             </Style>
                                         </StackPanel.Style>
                                         <TextBox Width="250" Tag="{Binding PendingEventId}" TextChanged="OnAnswerChanged" Padding="6,4"/>
-                                        <Button Content="发送" Tag="{Binding PendingEventId}" Click="OnAnswerClick" Padding="12,4" Margin="6,0,0,0"/>
+                                        <Button Content="{DynamicResource SendText}" Tag="{Binding PendingEventId}" Click="OnAnswerClick" Padding="12,4" Margin="6,0,0,0"/>
                                     </StackPanel>
                                 </Grid>
                             </DataTemplate>

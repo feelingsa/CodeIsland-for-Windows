@@ -21,7 +21,8 @@ public partial class App : Application
     private Task? _pipeTask;
     private DispatcherTimer? _cleanupTimer;
     private readonly NotificationSoundManager _sounds = new();
-    public DesktopSessionStore Sessions { get; } = new();
+    public DesktopSessionStore Sessions { get; private set; } = null!;
+    private AppSettings _settings = new();
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -32,12 +33,16 @@ public partial class App : Application
             return;
         }
 
+        _settings = new SettingsStore().Load();
+        L10n.Apply(Resources, _settings.Language);
+        Sessions = new DesktopSessionStore(_settings.MaxVisibleSessions, _settings.EventHistoryLimit);
+        _sounds.Enabled = _settings.SoundEnabled;
         StartPipeServer();
         Sessions.EventApplied += (_, agentEvent) => _sounds.Play(agentEvent);
         _window = new MainWindow(Sessions);
         _window.Show();
         _cleanupTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
-        _cleanupTimer.Tick += (_, _) => Sessions.RemoveExpired(DateTimeOffset.UtcNow.AddMinutes(-30));
+        _cleanupTimer.Tick += (_, _) => Sessions.RemoveExpired(DateTimeOffset.UtcNow.AddMinutes(-_settings.SessionCleanupMinutes));
         _cleanupTimer.Start();
         _tray = new NotifyIcon
         {

@@ -62,6 +62,32 @@ Require(NotificationSoundManager.CueFor(AgentEventType.SessionEnd) == Notificati
 Require(NotificationSoundManager.CueFor(AgentEventType.Error) == NotificationCue.Error,
     "Error must map to the error cue.");
 Console.WriteLine("SMOKE PASS: notification sound event mapping verified.");
+
+var settingsRoot = Path.Combine(Path.GetTempPath(), $"codeisland-settings-{Guid.NewGuid():N}");
+try
+{
+    var settingsStore = new SettingsStore(settingsRoot);
+    settingsStore.Save(new AppSettings
+    {
+        Language = "zh-CN",
+        SoundEnabled = false,
+        MaxVisibleSessions = 99,
+        SessionCleanupMinutes = 0
+    });
+    var loaded = settingsStore.Load();
+    Require(loaded.Language == "zh-CN" && !loaded.SoundEnabled, "Settings must round-trip.");
+    Require(loaded.MaxVisibleSessions == 20 && loaded.SessionCleanupMinutes == 1,
+        "Numeric settings must be clamped to supported ranges.");
+    Require(L10n.Get("ApproveText", loaded.Language) == "允许", "Chinese resources must resolve.");
+    Require(L10n.Get("ApproveText", "en-US") == "Approve", "English resources must resolve.");
+    File.WriteAllText(settingsStore.FilePath, "{broken");
+    Require(settingsStore.Load() == new AppSettings(), "Malformed settings must fall back to defaults.");
+    Console.WriteLine("SMOKE PASS: settings round-trip, validation, fallback and localization verified.");
+}
+finally
+{
+    if (Directory.Exists(settingsRoot)) Directory.Delete(settingsRoot, true);
+}
 return 0;
 
 static void Require(bool condition, string message)
