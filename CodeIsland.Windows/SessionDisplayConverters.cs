@@ -107,6 +107,8 @@ public sealed class AgentGifPathConverter : IValueConverter
         var name = value switch
         {
             AgentKind.Claude => "claude.gif",
+            AgentKind.Codex when string.Equals(parameter as string, "expanded", StringComparison.OrdinalIgnoreCase)
+                => "codex-expanded.gif",
             AgentKind.Codex => "codex.gif",
             AgentKind.Cursor => "cursor.gif",
             AgentKind.Gemini => "gemini.gif",

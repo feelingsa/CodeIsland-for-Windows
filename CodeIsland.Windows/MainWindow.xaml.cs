@@ -116,11 +116,6 @@ public partial class MainWindow : Window
         if (_sessions.Resolve(eventId, UserAction.Answer, answer)) _answerDrafts.Remove(eventId);
     }
 
-    private void OnCloseSessionClick(object sender, RoutedEventArgs e)
-    {
-        if (sender is WpfButton { Tag: string sessionId }) _sessions.RemoveSession(sessionId);
-    }
-
     private void OnSessionsChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(DesktopSessionStore.Sessions) or nameof(DesktopSessionStore.SessionCount))
@@ -160,6 +155,7 @@ public partial class MainWindow : Window
 
     private void ActivateSession(SessionSnapshot snapshot)
     {
+        if (_workspaceLauncher.TryLaunchConversation(snapshot.Agent, snapshot.TerminalKind, snapshot.SessionId)) return;
         var activated = _terminalActivator.TryActivate(snapshot.ProcessId, snapshot.WorkingDirectory);
         if (!activated) activated = _workspaceLauncher.TryLaunch(snapshot.Agent, snapshot.TerminalKind, snapshot.WorkingDirectory);
         if (!activated) ToolTip = "No matching terminal or IDE was found, and no fallback launcher is available.";

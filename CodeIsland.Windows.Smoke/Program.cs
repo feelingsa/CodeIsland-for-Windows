@@ -12,6 +12,17 @@ using (var codexGif = System.Drawing.Image.FromFile(codexGifPath))
     Require(codexGif.GetFrameCount(System.Drawing.Imaging.FrameDimension.Time) == 6,
         "Codex pet GIF must contain six animation frames.");
 }
+var codexExpandedGifPath = Path.Combine(AppContext.BaseDirectory, "source", "codex-expanded.gif");
+using (var codexExpandedGif = new System.Drawing.Bitmap(codexExpandedGifPath))
+{
+    Require(codexExpandedGif.Width == 32 && codexExpandedGif.Height == 32,
+        "Expanded Codex pet GIF must remain at its native 32x32 size.");
+    Require(codexExpandedGif.GetFrameCount(System.Drawing.Imaging.FrameDimension.Time) == 6,
+        "Expanded Codex pet GIF must contain six animation frames.");
+    var background = codexExpandedGif.GetPixel(0, 0);
+    Require(background.R == 13 && background.G == 13 && background.B == 14,
+        "Expanded Codex pet GIF must match the #0D0D0E session-card background.");
+}
 Console.WriteLine("SMOKE PASS: opaque 32x32 six-frame Codex pet GIF verified.");
 
 var store = new DesktopSessionStore();
@@ -169,7 +180,12 @@ try
     Require(terminalTarget?.Executable.EndsWith("wt.exe", StringComparison.OrdinalIgnoreCase) == true
             && terminalTarget.Arguments.StartsWith("-d ", StringComparison.Ordinal),
         "Terminal sessions must prefer Windows Terminal with a working-directory argument.");
-Console.WriteLine("SMOKE PASS: Cursor and Windows Terminal fallback launch resolution verified.");
+    var codexDesktopTarget = launcher.ResolveConversation(AgentKind.Codex, "codex-desktop",
+        "00000000-0000-4000-8000-000000000001");
+    Require(codexDesktopTarget?.Executable ==
+            "codex://threads/00000000-0000-4000-8000-000000000001",
+        "Codex Desktop sessions must resolve to the exact thread deep link.");
+Console.WriteLine("SMOKE PASS: Cursor, terminal and Codex Desktop thread launch resolution verified.");
 }
 finally
 {

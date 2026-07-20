@@ -90,7 +90,7 @@
                                     <Grid>
                                         <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                                         <local:AnimatedGifImage Grid.Column="0" Width="{Binding Agent, Mode=OneWay, Converter={StaticResource AgentGifSizeConverter}}" Height="{Binding Agent, Mode=OneWay, Converter={StaticResource AgentGifSizeConverter}}" Margin="4,0,12,0" HorizontalAlignment="Left" VerticalAlignment="Center"
-                                            RenderOptions.BitmapScalingMode="NearestNeighbor" SourcePath="{Binding Agent, Mode=OneWay, Converter={StaticResource AgentGifPathConverter}}"/>
+                                            RenderOptions.BitmapScalingMode="NearestNeighbor" SourcePath="{Binding Agent, Mode=OneWay, Converter={StaticResource AgentGifPathConverter}, ConverterParameter=expanded}"/>
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="4,0,14,0">
                                             <TextBlock FontSize="18" FontWeight="Bold" TextTrimming="CharacterEllipsis">
                                                 <Run Text="{Binding Path=., Mode=OneWay, Converter={StaticResource SessionTitleConverter}}" Foreground="{Binding State, Mode=OneWay, Converter={StaticResource SessionStateBrushConverter}}"/>
@@ -108,7 +108,6 @@
                                         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top">
                                             <Border Style="{StaticResource Pill}"><TextBlock Text="{Binding StartedAt, Mode=OneWay, Converter={StaticResource SessionElapsedConverter}}" Foreground="#FFB5B5BA" FontWeight="Bold"/></Border>
                                             <Border Style="{StaticResource Pill}" Background="#FF0B2012" Cursor="Hand" MouseLeftButtonUp="OnJumpPillClick" Tag="{Binding Path=., Mode=OneWay}"><StackPanel Orientation="Horizontal"><TextBlock Text="&gt;_" Foreground="#FF37D067" Margin="0,0,7,0"/><TextBlock Text="{Binding TerminalKind, Mode=OneWay, TargetNullValue=Terminal}" Foreground="#FF37D067" FontWeight="Bold"/><TextBlock Text="  &gt;" Foreground="#FF258A48"/></StackPanel></Border>
-                                            <Button Style="{StaticResource IconButton}" Content="&#xE8BB;" FontSize="14" Width="28" Height="28" Margin="5,0,0,0" Tag="{Binding SessionId}" Click="OnCloseSessionClick" ToolTip="{DynamicResource CloseSessionText}"/>
                                         </StackPanel>
                                     </Grid>
                                 </Border>

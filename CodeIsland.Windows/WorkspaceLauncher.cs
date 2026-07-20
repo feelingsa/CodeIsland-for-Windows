@@ -8,6 +8,22 @@ public sealed record LaunchTarget(string Executable, string Arguments);
 
 public sealed class WorkspaceLauncher
 {
+    public LaunchTarget? ResolveConversation(AgentKind agent, string? terminalKind, string sessionId)
+    {
+        if (agent != AgentKind.Codex
+            || !string.Equals(terminalKind, "codex-desktop", StringComparison.OrdinalIgnoreCase)
+            || string.IsNullOrWhiteSpace(sessionId)) return null;
+        return new LaunchTarget($"codex://threads/{Uri.EscapeDataString(sessionId)}", string.Empty);
+    }
+
+    public bool TryLaunchConversation(AgentKind agent, string? terminalKind, string sessionId)
+    {
+        var target = ResolveConversation(agent, terminalKind, sessionId);
+        if (target is null) return false;
+        Process.Start(new ProcessStartInfo(target.Executable) { UseShellExecute = true });
+        return true;
+    }
+
     public LaunchTarget? Resolve(AgentKind agent, string? terminalKind, string workingDirectory, string? path = null)
     {
         if (!Directory.Exists(workingDirectory)) return null;
