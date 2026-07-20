@@ -27,13 +27,10 @@ public static class PanelDocking
             : edges.HasFlag(DockEdges.Right) ? workArea.Right - panel.Width : position.X;
         var top = edges.HasFlag(DockEdges.Top) ? workArea.Top
             : edges.HasFlag(DockEdges.Bottom) ? workArea.Bottom - panel.Height : position.Y;
-        // A larger screen-facing radius creates the shoulder curve used by the
-        // reference design while the flat middle section remains flush to the edge.
-        var dockRadius = radius + 10;
-        var topLeft = edges.HasFlag(DockEdges.Top) || edges.HasFlag(DockEdges.Left) ? dockRadius : radius;
-        var topRight = edges.HasFlag(DockEdges.Top) || edges.HasFlag(DockEdges.Right) ? dockRadius : radius;
-        var bottomRight = edges.HasFlag(DockEdges.Bottom) || edges.HasFlag(DockEdges.Right) ? dockRadius : radius;
-        var bottomLeft = edges.HasFlag(DockEdges.Bottom) || edges.HasFlag(DockEdges.Left) ? dockRadius : radius;
+        var topLeft = edges.HasFlag(DockEdges.Top) || edges.HasFlag(DockEdges.Left) ? 0 : radius;
+        var topRight = edges.HasFlag(DockEdges.Top) || edges.HasFlag(DockEdges.Right) ? 0 : radius;
+        var bottomRight = edges.HasFlag(DockEdges.Bottom) || edges.HasFlag(DockEdges.Right) ? 0 : radius;
+        var bottomLeft = edges.HasFlag(DockEdges.Bottom) || edges.HasFlag(DockEdges.Left) ? 0 : radius;
         return new PanelDockPlacement(edges, left, top,
             new CornerRadius(topLeft, topRight, bottomRight, bottomLeft));
     }

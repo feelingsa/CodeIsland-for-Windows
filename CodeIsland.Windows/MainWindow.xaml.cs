@@ -236,10 +236,21 @@ public partial class MainWindow : Window
         Left = placement.Left;
         Top = placement.Top;
         PanelBorder.CornerRadius = placement.Corners;
+        var shoulderDepth = Math.Min(38, Math.Min(ActualWidth, ActualHeight) * .25);
+        var shoulders = DockShoulderGeometry.Create(
+            new System.Windows.Size(ActualWidth, ActualHeight), placement.Edges, shoulderDepth);
+        DockShoulderFirst.Data = shoulders.First;
+        DockShoulderSecond.Data = shoulders.Second;
+        PanelBorder.Margin = placement.Edges.HasFlag(DockEdges.Top) || placement.Edges.HasFlag(DockEdges.Bottom)
+            ? new Thickness(shoulderDepth, 0, shoulderDepth, 0)
+            : placement.Edges.HasFlag(DockEdges.Left) || placement.Edges.HasFlag(DockEdges.Right)
+                ? new Thickness(0, shoulderDepth, 0, shoulderDepth)
+                : new Thickness(0);
     }
 
     public void TogglePanel()
     {
+        var center = new System.Windows.Point(Left + ActualWidth / 2, Top + ActualHeight / 2);
         _expanded = !_expanded;
         ExpandedPanel.Visibility = _expanded ? Visibility.Visible : Visibility.Collapsed;
         CollapsedPanel.Visibility = _expanded ? Visibility.Collapsed : Visibility.Visible;
@@ -258,7 +269,25 @@ public partial class MainWindow : Window
             Height = CollapsedHeight;
         }
         UpdateLayout();
-        PositionPanel();
+        var centeredPosition = new System.Windows.Point(center.X - ActualWidth / 2, center.Y - ActualHeight / 2);
+        var placement = PanelDocking.Place(GetWorkingArea(), new System.Windows.Size(ActualWidth, ActualHeight),
+            centeredPosition, _dockEdges, _expanded ? 24 : 18);
+        ApplyPlacement(placement);
+        AnimatePanelToggle(_expanded);
+    }
+
+    private void AnimatePanelToggle(bool expanding)
+    {
+        if (!SystemParameters.ClientAreaAnimation) return;
+        var easing = new CubicEase { EasingMode = EasingMode.EaseOut };
+        var startScale = expanding ? 0.84 : 1.12;
+        var duration = TimeSpan.FromMilliseconds(expanding ? 240 : 190);
+        PanelScale.BeginAnimation(ScaleTransform.ScaleXProperty,
+            new DoubleAnimation(startScale, 1, duration) { EasingFunction = easing });
+        PanelScale.BeginAnimation(ScaleTransform.ScaleYProperty,
+            new DoubleAnimation(startScale, 1, duration) { EasingFunction = easing });
+        PanelChrome.BeginAnimation(OpacityProperty,
+            new DoubleAnimation(0.68, 1, duration) { EasingFunction = easing });
     }
 
     private void OnEventApplied(object? sender, AgentEvent agentEvent)

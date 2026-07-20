@@ -46,9 +46,10 @@
         </Style>
     </Window.Resources>
 
+    <Grid x:Name="PanelChrome" RenderTransformOrigin="0.5,0.5">
+        <Grid.RenderTransform><ScaleTransform x:Name="PanelScale" ScaleX="1" ScaleY="1"/></Grid.RenderTransform>
     <Border x:Name="PanelBorder" CornerRadius="24" Background="#FF000000" BorderBrush="#FF252528"
-            BorderThickness="1" RenderTransformOrigin="0.5,0" ClipToBounds="True">
-        <Border.RenderTransform><ScaleTransform x:Name="PanelScale" ScaleX="1" ScaleY="1"/></Border.RenderTransform>
+            BorderThickness="1" ClipToBounds="True">
         <Grid>
             <Grid x:Name="ExpandedPanel" Margin="16,12,16,16">
                 <Grid.RowDefinitions><RowDefinition Height="50"/><RowDefinition Height="1"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
@@ -129,4 +130,7 @@
             </Grid>
         </Grid>
     </Border>
+        <Path x:Name="DockShoulderFirst" Fill="#FF000000" IsHitTestVisible="False"/>
+        <Path x:Name="DockShoulderSecond" Fill="#FF000000" IsHitTestVisible="False"/>
+    </Grid>
 </Window>

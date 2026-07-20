@@ -236,18 +236,25 @@ var topDock = PanelDocking.Resolve(workArea, new System.Windows.Size(780, 300),
     new System.Windows.Point(570, 7));
 Require(topDock.Edges == DockEdges.Top && topDock.Top == 0,
     "Panel near the top edge must snap flush to the screen.");
-Require(topDock.Corners.TopLeft > topDock.Corners.BottomLeft
-        && topDock.Corners.TopRight > topDock.Corners.BottomRight,
-    "Top-docked panel must use larger screen-facing shoulder curves.");
+Require(topDock.Corners.TopLeft == 0 && topDock.Corners.TopRight == 0,
+    "Top-docked black panel must remain flat behind its curved shoulders.");
 var bottomRightDock = PanelDocking.Resolve(workArea, new System.Windows.Size(400, 64),
     new System.Windows.Point(1518, 1018));
 Require(bottomRightDock.Edges == (DockEdges.Right | DockEdges.Bottom)
         && bottomRightDock.Left == 1520 && bottomRightDock.Top == 1016,
     "Collapsed panel must snap exactly into a screen corner.");
-Require(bottomRightDock.Corners.TopLeft < bottomRightDock.Corners.TopRight
-        && bottomRightDock.Corners.TopLeft < bottomRightDock.Corners.BottomLeft
-        && bottomRightDock.Corners.BottomRight > bottomRightDock.Corners.TopLeft,
-    "Corner-docked panel must use continuous curves on both screen-facing sides.");
+Require(bottomRightDock.Corners.TopLeft > 0 && bottomRightDock.Corners.TopRight == 0
+        && bottomRightDock.Corners.BottomLeft == 0 && bottomRightDock.Corners.BottomRight == 0,
+    "Corner-docked black panel must leave its screen-facing corners flat.");
+var shoulders = DockShoulderGeometry.Create(new System.Windows.Size(780, 160), DockEdges.Top);
+Require(!shoulders.First.Bounds.IsEmpty && !shoulders.Second.Bounds.IsEmpty
+        && shoulders.First.Bounds.Left == 0 && shoulders.Second.Bounds.Right == 780,
+    "Top docking must create curved shoulders at both screen connections.");
+var collapsedCenter = new System.Windows.Point(300 + 400d / 2, 0 + 64d / 2);
+var expandedFromCenter = PanelDocking.Place(workArea, new System.Windows.Size(780, 300),
+    new System.Windows.Point(collapsedCenter.X - 780d / 2, collapsedCenter.Y - 300d / 2), DockEdges.Top);
+Require(Math.Abs((expandedFromCenter.Left + 780d / 2) - collapsedCenter.X) < .01,
+    "Top-docked expand must preserve the collapsed panel's horizontal center.");
 Console.WriteLine("SMOKE PASS: four-edge snapping and seamless dock corner geometry verified.");
 var monitorBounds = new System.Drawing.Rectangle(0, 0, 1920, 1080);
 Require(FullscreenDetector.IsSameBounds(new System.Drawing.Rectangle(0, 0, 1920, 1080), monitorBounds),
