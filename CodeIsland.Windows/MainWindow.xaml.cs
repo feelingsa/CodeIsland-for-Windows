@@ -207,7 +207,8 @@ public partial class MainWindow : Window
         SoundButton.ToolTip = enabled ? "Mute notifications" : "Enable notification sounds";
     }
 
-    private void OnExitClick(object sender, RoutedEventArgs e) => System.Windows.Application.Current.Shutdown();
+    private void OnExitClick(object sender, RoutedEventArgs e) =>
+        ((App)System.Windows.Application.Current).RequestExit();
 
     private void PositionPanel()
     {

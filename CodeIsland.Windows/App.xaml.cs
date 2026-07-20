@@ -112,7 +112,7 @@ public partial class App : Application
         menu.Items.Add("设置", null, (_, _) => OpenSettings());
         menu.Items.Add("导出诊断", null, (_, _) => ExportDiagnostics());
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add("退出", null, (_, _) => Shutdown());
+        menu.Items.Add("退出", null, (_, _) => RequestExit());
         _tray.ContextMenuStrip = menu;
         _tray.DoubleClick += (_, _) => ShowPanel();
         if (e.Args.Contains("--settings", StringComparer.OrdinalIgnoreCase)) OpenSettings();
@@ -250,6 +250,17 @@ public partial class App : Application
         _window.Activate();
     }
 
+    internal void RequestExit()
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(RequestExit);
+            return;
+        }
+        if (_tray is not null) _tray.Visible = false;
+        Shutdown();
+    }
+
     protected override void OnExit(ExitEventArgs e)
     {
         _pipeStop?.Cancel();
@@ -257,14 +268,19 @@ public partial class App : Application
         _logger.Info("Application exit.");
         _cleanupTimer?.Stop();
         _fullscreenTimer?.Stop();
-        if (_pipeTask is not null)
+        if (_tray is not null)
+        {
+            _tray.Visible = false;
+            _tray.Dispose();
+            _tray = null;
+        }
+        if (_pipeTask is { IsCompleted: true })
         {
             try { _pipeTask.GetAwaiter().GetResult(); }
             catch (OperationCanceledException) { }
         }
         _pipeServer?.DisposeAsync().AsTask().GetAwaiter().GetResult();
         _pipeStop?.Dispose();
-        _tray?.Dispose();
         _appIcon?.Dispose();
         _showPanelRegistration?.Unregister(null);
         _showPanelEvent?.Dispose();
