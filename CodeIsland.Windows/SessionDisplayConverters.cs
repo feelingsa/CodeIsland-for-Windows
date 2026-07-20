@@ -59,6 +59,7 @@ public sealed class SessionStatusTextConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) => value switch
     {
+        null => "CODEISLAND 0",
         SessionSnapshot { Error: { Length: > 0 } error } => error,
         SessionSnapshot { State: SessionState.WaitingForPermission } => "waiting for approval_",
         SessionSnapshot { State: SessionState.WaitingForAnswer } => "waiting for answer_",

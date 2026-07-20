@@ -69,7 +69,11 @@ public partial class App : Application
             _sounds.Play(agentEvent);
             _logger.Info($"Event received: agent={agentEvent.Agent} type={agentEvent.Type} session={agentEvent.SessionId}");
             if (agentEvent.Type is AgentEventType.PermissionRequest or AgentEventType.Question or AgentEventType.Error)
-                Dispatcher.BeginInvoke(ShowPanel);
+                Dispatcher.BeginInvoke(() =>
+                {
+                    _window?.ExpandPanel();
+                    ShowPanel();
+                });
         };
         _codexTailer = new CodexSessionTailer();
         _codexTailer.EventReceived += (_, agentEvent) => Dispatcher.Invoke(() => Sessions.Apply(agentEvent));

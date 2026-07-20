@@ -24,6 +24,12 @@ using (var trayMenu = TrayMenuFactory.Create())
 }
 Console.WriteLine("SMOKE PASS: transparent app icon and pixel-theme tray menu verified.");
 
+var statusConverter = new SessionStatusTextConverter();
+Require((string)statusConverter.Convert(null, typeof(string), null!, System.Globalization.CultureInfo.InvariantCulture)
+        == "CODEISLAND 0",
+    "Collapsed idle panel must show CODEISLAND 0 instead of an active-session status.");
+Console.WriteLine("SMOKE PASS: collapsed idle status text verified.");
+
 var codexGifPath = Path.Combine(AppContext.BaseDirectory, "source", "codex.gif");
 using (var codexGif = System.Drawing.Image.FromFile(codexGifPath))
 {

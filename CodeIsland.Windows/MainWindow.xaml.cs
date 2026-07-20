@@ -275,6 +275,11 @@ public partial class MainWindow : Window
         AnimatePanelToggle(_expanded);
     }
 
+    public void ExpandPanel()
+    {
+        if (!_expanded) TogglePanel();
+    }
+
     private void AnimatePanelToggle(bool expanding)
     {
         if (!SystemParameters.ClientAreaAnimation) return;
@@ -291,8 +296,8 @@ public partial class MainWindow : Window
 
     private void OnEventApplied(object? sender, AgentEvent agentEvent)
     {
-        if (!_expanded && agentEvent.Type is AgentEventType.PermissionRequest or AgentEventType.Question or AgentEventType.Error)
-            TogglePanel();
+        if (agentEvent.Type is AgentEventType.PermissionRequest or AgentEventType.Question or AgentEventType.Error)
+            ExpandPanel();
         if (!SystemParameters.ClientAreaAnimation) return;
         var easing = new QuadraticEase { EasingMode = EasingMode.EaseOut };
         PanelScale.BeginAnimation(ScaleTransform.ScaleXProperty,
