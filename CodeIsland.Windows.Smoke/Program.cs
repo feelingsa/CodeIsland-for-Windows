@@ -1,5 +1,6 @@
 using CodeIsland.Core;
 using CodeIsland.Ipc;
+using CodeIsland.Protocol;
 using CodeIsland.Windows;
 using CodeIsland.Bluetooth;
 using System.IO.Compression;
@@ -326,6 +327,21 @@ Require(SessionFilter.IsVisible(filterSession, "cli"), "CLI filter must include 
 Require(!SessionFilter.IsVisible(filterSession with { Agent = AgentKind.Unknown }, "cli"),
     "CLI filter must exclude unknown sources.");
 Console.WriteLine("SMOKE PASS: all, active and CLI session filters verified.");
+var mcpContext = new CodexTranscriptContext();
+CodexTranscriptParser.ParseLine(
+    "{\"timestamp\":\"2026-07-20T08:00:00Z\",\"type\":\"session_meta\",\"payload\":{\"session_id\":\"mcp-session\",\"cwd\":\"E:\\\\Demo\"}}",
+    mcpContext);
+var mcpEvent = CodexTranscriptParser.ParseLine(
+    "{\"timestamp\":\"2026-07-20T08:00:01Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"mcp_tool_call_end\",\"call_id\":\"mcp-1\",\"invocation\":{\"server\":\"node_repl\",\"tool\":\"js\"}}}",
+    mcpContext);
+Require(mcpEvent is { Type: AgentEventType.ToolEnd, ToolName: "plugin node_repl/js" }
+        && mcpEvent.Text == "plugin node_repl/js completed",
+    "Codex MCP/plugin calls must be parsed with their server and tool names.");
+var mcpStore = new DesktopSessionStore();
+mcpStore.Apply(mcpEvent!);
+Require(mcpStore.CurrentSession?.LastMessage == "plugin node_repl/js completed",
+    "Completed plugin calls must remain visible in the session status.");
+Console.WriteLine("SMOKE PASS: Codex MCP/plugin call parsing and visible completion status verified.");
 var transcriptRoot = Path.Combine(Path.GetTempPath(), $"codeisland-transcript-{Guid.NewGuid():N}");
 try
 {

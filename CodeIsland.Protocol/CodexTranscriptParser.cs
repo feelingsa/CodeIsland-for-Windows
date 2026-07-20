@@ -42,6 +42,10 @@ public static class CodexTranscriptParser
                     tool: "apply_patch"),
                 "patch_apply_end" => Create(context, Id(payload, timestamp), AgentEventType.ToolEnd, timestamp,
                     tool: "apply_patch"),
+                "mcp_tool_call_begin" => Create(context, Id(payload, timestamp), AgentEventType.ToolStart, timestamp,
+                    tool: McpTool(payload)),
+                "mcp_tool_call_end" => Create(context, Id(payload, timestamp), AgentEventType.ToolEnd, timestamp,
+                    text: $"{McpTool(payload)} completed", tool: McpTool(payload)),
                 "task_complete" or "turn_complete" => Create(context, Id(payload, timestamp), AgentEventType.SessionEnd, timestamp,
                     text: "Codex task completed"),
                 "turn_aborted" or "error" => Create(context, Id(payload, timestamp), AgentEventType.Error, timestamp,
@@ -79,6 +83,22 @@ public static class CodexTranscriptParser
             if (!string.IsNullOrWhiteSpace(text)) return text.Length <= 240 ? text : text[..240] + "...";
         }
         return null;
+    }
+
+    private static string McpTool(JsonElement payload)
+    {
+        if (!payload.TryGetProperty("invocation", out var invocation)
+            || invocation.ValueKind != JsonValueKind.Object)
+            return "plugin";
+        var server = String(invocation, "server");
+        var tool = String(invocation, "tool");
+        return (server, tool) switch
+        {
+            ({ Length: > 0 }, { Length: > 0 }) => $"plugin {server}/{tool}",
+            ({ Length: > 0 }, _) => $"plugin {server}",
+            (_, { Length: > 0 }) => $"plugin {tool}",
+            _ => "plugin"
+        };
     }
 
     private static string? String(JsonElement element, params string[] names)
