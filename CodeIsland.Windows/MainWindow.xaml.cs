@@ -25,9 +25,8 @@ public partial class MainWindow : Window
 {
     private bool _expanded = true;
     private const double ExpandedWidth = 780;
-    private const double ExpandedHeight = 650;
-    private const double CollapsedWidth = 260;
-    private const double CollapsedHeight = 64;
+    private const double CollapsedWidth = 460;
+    private const double CollapsedHeight = 152;
     private readonly DesktopSessionStore _sessions;
     private readonly Dictionary<string, string> _answerDrafts = new(StringComparer.Ordinal);
     private GlobalHotKeyManager? _hotKeys;
@@ -45,7 +44,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         _sessions = sessions;
         _settings = settings;
-        SoundButton.Content = settings.SoundEnabled ? "◖" : "×";
+        SoundButton.Content = settings.SoundEnabled ? "\uE767" : "\uE74F";
         SoundButton.ToolTip = settings.SoundEnabled ? "Mute notifications" : "Enable notification sounds";
         _sessions.EventApplied += OnEventApplied;
         _sessions.PropertyChanged += OnSessionsChanged;
@@ -53,7 +52,9 @@ public partial class MainWindow : Window
         Loaded += (_, _) =>
         {
             PositionPanel();
-            _sessionView = ((CollectionViewSource)FindResource("GroupedSessions")).View;
+            _sessionView = CollectionViewSource.GetDefaultView(_sessions.Sessions);
+            if (_sessionView.GroupDescriptions.Count == 0)
+                _sessionView.GroupDescriptions.Add(new PropertyGroupDescription(nameof(SessionSnapshot.Agent)));
             _sessionView.Filter = IsSessionVisible;
         };
         SourceInitialized += (_, _) =>
@@ -78,7 +79,7 @@ public partial class MainWindow : Window
     public void ApplySettings(AppSettings settings)
     {
         _settings = settings;
-        SoundButton.Content = settings.SoundEnabled ? "◖" : "×";
+        SoundButton.Content = settings.SoundEnabled ? "\uE767" : "\uE74F";
         SoundButton.ToolTip = settings.SoundEnabled ? "Mute notifications" : "Enable notification sounds";
         PositionPanel();
         if (_source is not null) RegisterHotKeys();
@@ -169,7 +170,7 @@ public partial class MainWindow : Window
     private void OnSoundClick(object sender, RoutedEventArgs e)
     {
         var enabled = ((App)System.Windows.Application.Current).ToggleSound();
-        SoundButton.Content = enabled ? "◖" : "×";
+        SoundButton.Content = enabled ? "\uE767" : "\uE74F";
         SoundButton.ToolTip = enabled ? "Mute notifications" : "Enable notification sounds";
     }
 
@@ -187,8 +188,23 @@ public partial class MainWindow : Window
     public void TogglePanel()
     {
         _expanded = !_expanded;
-        Width = _expanded ? ExpandedWidth : CollapsedWidth;
-        Height = _expanded ? ExpandedHeight : CollapsedHeight;
+        ExpandedPanel.Visibility = _expanded ? Visibility.Visible : Visibility.Collapsed;
+        CollapsedPanel.Visibility = _expanded ? Visibility.Collapsed : Visibility.Visible;
+        if (_expanded)
+        {
+            ClearValue(HeightProperty);
+            Width = ExpandedWidth;
+            MaxHeight = 720;
+            SizeToContent = SizeToContent.Height;
+        }
+        else
+        {
+            SizeToContent = SizeToContent.Manual;
+            MaxHeight = CollapsedHeight;
+            Width = CollapsedWidth;
+            Height = CollapsedHeight;
+        }
+        UpdateLayout();
         PositionPanel();
     }
 

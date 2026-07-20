@@ -15,8 +15,8 @@ namespace CodeIsland.Windows;
 
 public partial class App : Application
 {
-    private const string InstanceMutexName = "CodeIsland.Windows.SingleInstance.v4";
-    private const string ShowPanelEventName = "CodeIsland.Windows.ShowPanel.v4";
+    private const string InstanceMutexName = "CodeIsland.Windows.SingleInstance.v5";
+    private const string ShowPanelEventName = "CodeIsland.Windows.ShowPanel.v5";
     private Mutex? _instanceMutex;
     private EventWaitHandle? _showPanelEvent;
     private RegisteredWaitHandle? _showPanelRegistration;
@@ -72,6 +72,7 @@ public partial class App : Application
         _codexTailer.EventReceived += (_, agentEvent) => Dispatcher.Invoke(() => Sessions.Apply(agentEvent));
         _codexTailer.Start();
         _window = new MainWindow(Sessions, _settings);
+        _manualShowUntil = DateTimeOffset.UtcNow.AddSeconds(30);
         try
         {
             _window.Show();
@@ -226,7 +227,7 @@ public partial class App : Application
     private void ShowPanel()
     {
         if (_window is null) return;
-        _manualShowUntil = DateTimeOffset.UtcNow.AddSeconds(5);
+        _manualShowUntil = DateTimeOffset.UtcNow.AddSeconds(30);
         _fullscreenSuppressed = false;
         _window.Show();
         if (_window.WindowState == WindowState.Minimized) _window.WindowState = WindowState.Normal;

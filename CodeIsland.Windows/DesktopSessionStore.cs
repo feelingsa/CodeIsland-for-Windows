@@ -18,6 +18,9 @@ public sealed class DesktopSessionStore : INotifyPropertyChanged
     public int SessionCount => Sessions.Count;
     public bool HasSessions => Sessions.Count > 0;
     public bool IsIdle => !HasSessions;
+    public SessionSnapshot? CurrentSession => Sessions.FirstOrDefault(value =>
+        value.State is not (SessionState.Completed or SessionState.Cancelled or SessionState.Failed))
+        ?? Sessions.FirstOrDefault();
 
     public DesktopSessionStore(int maxVisibleSessions = 5, int historyLimit = 200)
     {
@@ -41,6 +44,7 @@ public sealed class DesktopSessionStore : INotifyPropertyChanged
         OnPropertyChanged(nameof(SessionCount));
         OnPropertyChanged(nameof(HasSessions));
         OnPropertyChanged(nameof(IsIdle));
+        OnPropertyChanged(nameof(CurrentSession));
         EventApplied?.Invoke(this, agentEvent);
     }
 
@@ -89,6 +93,7 @@ public sealed class DesktopSessionStore : INotifyPropertyChanged
         OnPropertyChanged(nameof(SessionCount));
         OnPropertyChanged(nameof(HasSessions));
         OnPropertyChanged(nameof(IsIdle));
+        OnPropertyChanged(nameof(CurrentSession));
         return removed;
     }
 
@@ -105,6 +110,7 @@ public sealed class DesktopSessionStore : INotifyPropertyChanged
         OnPropertyChanged(nameof(SessionCount));
         OnPropertyChanged(nameof(HasSessions));
         OnPropertyChanged(nameof(IsIdle));
+        OnPropertyChanged(nameof(CurrentSession));
         return true;
     }
 
@@ -112,6 +118,7 @@ public sealed class DesktopSessionStore : INotifyPropertyChanged
     {
         var index = Sessions.ToList().FindIndex(value => value.SessionId == snapshot.SessionId);
         if (index >= 0) Sessions[index] = snapshot;
+        OnPropertyChanged(nameof(CurrentSession));
     }
 
     private sealed record PendingResponse(string SessionId, TaskCompletionSource<PipeMessage> Completion);

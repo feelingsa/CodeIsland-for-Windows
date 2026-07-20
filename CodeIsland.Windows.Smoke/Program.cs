@@ -24,6 +24,8 @@ Require(response.AckFor == request.EventId, "Response must target the pending ev
 Require(store.PendingCount == 0, "Resolved request must be removed.");
 Require(store.Sessions.Single().State == SessionState.Running,
     "Resolved permission request must return the session to Running.");
+Require(store.CurrentSession?.SessionId == request.SessionId,
+    "Collapsed panel must expose the current active session.");
 
 var denyRequest = request with { EventId = "permission-2" };
 var denyPending = store.WaitForResponseAsync(denyRequest, stop.Token);
