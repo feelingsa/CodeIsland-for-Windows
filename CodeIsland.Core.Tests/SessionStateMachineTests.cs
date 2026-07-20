@@ -49,6 +49,28 @@ public sealed class SessionStateMachineTests
         Assert.Equal("process exited", snapshot.Error);
     }
 
+    [Fact]
+    public void NewActivityRecoversFailedSessionAndClearsStaleError()
+    {
+        var machine = new SessionStateMachine();
+        machine.Apply(Event("1", AgentEventType.SessionStart));
+        machine.Apply(Event("2", AgentEventType.Error, text: "Codex task failed"));
+        machine.Apply(Event("3", AgentEventType.SessionStart, text: "Codex task restarted"));
+
+        Assert.True(machine.TryGet("session-1", out var restarted));
+        Assert.Equal(SessionState.Running, restarted!.State);
+        Assert.Null(restarted.Error);
+        Assert.Equal("Codex task restarted", restarted.LastMessage);
+
+        machine.Apply(Event("4", AgentEventType.Error, text: "interrupted again"));
+        machine.Apply(Event("5", AgentEventType.Message, text: "Continuing with live output"));
+
+        Assert.True(machine.TryGet("session-1", out var continued));
+        Assert.Equal(SessionState.Running, continued!.State);
+        Assert.Null(continued.Error);
+        Assert.Equal("Continuing with live output", continued.LastMessage);
+    }
+
     private static AgentEvent Event(string id, AgentEventType type, string? text = null, string? tool = null) =>
         new(id, "session-1", AgentKind.Codex, type, Now.AddSeconds(int.Parse(id == "same" ? "0" : id)),
             @"E:\repo", "Task", text, tool);

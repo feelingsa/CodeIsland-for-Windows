@@ -105,6 +105,21 @@ Require(bounded.RemoveSession("bounded-1"), "Visible session must support explic
 Require(bounded.SessionCount == 0, "Explicit removal must update the visible collection.");
 Console.WriteLine("SMOKE PASS: state recovery, bounded history, visible limit and expiry cleanup verified.");
 
+var resumed = new DesktopSessionStore();
+resumed.Apply(new AgentEvent("resume-start", "resume-session", AgentKind.Codex,
+    AgentEventType.SessionStart, DateTimeOffset.UtcNow, Text: "Codex task started"));
+resumed.Apply(new AgentEvent("resume-error", "resume-session", AgentKind.Codex,
+    AgentEventType.Error, DateTimeOffset.UtcNow, Text: "Codex task failed"));
+resumed.Apply(new AgentEvent("resume-message", "resume-session", AgentKind.Codex,
+    AgentEventType.Message, DateTimeOffset.UtcNow, Text: "Continuing with live output"));
+Require(resumed.CurrentSession is { State: SessionState.Running, Error: null }
+        && resumed.CurrentSession.LastMessage == "Continuing with live output",
+    "A resumed Codex session must clear its stale failure and expose live output.");
+Require((string)new SessionStatusTextConverter().Convert(resumed.CurrentSession, typeof(string), null!,
+            System.Globalization.CultureInfo.InvariantCulture) == "Continuing with live output",
+    "Collapsed panel must show resumed live output instead of the previous failure.");
+Console.WriteLine("SMOKE PASS: interrupted Codex session resumes with live collapsed status.");
+
 var prioritized = new DesktopSessionStore(maxVisibleSessions: 3);
 prioritized.Apply(new AgentEvent("priority-1", "priority-first", AgentKind.Codex,
     AgentEventType.SessionStart, DateTimeOffset.UtcNow));

@@ -34,7 +34,7 @@ public sealed class SessionStateMachine
             state is SessionState.WaitingForPermission or SessionState.WaitingForAnswer
                 ? agentEvent.EventId
                 : null,
-            agentEvent.Type == AgentEventType.Error ? agentEvent.Text : current?.Error,
+            ResolveError(agentEvent, current),
             agentEvent.ProcessId ?? current?.ProcessId,
             agentEvent.TerminalKind ?? current?.TerminalKind);
 
@@ -73,7 +73,7 @@ public sealed class SessionStateMachine
         AgentEventType.ToolEnd => SessionState.Running,
         AgentEventType.PermissionRequest => SessionState.WaitingForPermission,
         AgentEventType.Question => SessionState.WaitingForAnswer,
-        AgentEventType.Message => current is SessionState.Completed or SessionState.Failed or SessionState.Cancelled
+        AgentEventType.Message => current is SessionState.Completed or SessionState.Cancelled
             ? current.Value
             : SessionState.Running,
         AgentEventType.Error => SessionState.Failed,
@@ -82,10 +82,19 @@ public sealed class SessionStateMachine
     };
 
     private static string? ResolveMessage(AgentEvent value, SessionSnapshot? current) =>
-        value.Type is AgentEventType.Message or AgentEventType.Question or AgentEventType.PermissionRequest
+        value.Type is AgentEventType.SessionStart or AgentEventType.Message
+            or AgentEventType.Question or AgentEventType.PermissionRequest
             || value.Type == AgentEventType.ToolEnd && !string.IsNullOrWhiteSpace(value.Text)
             ? value.Text ?? current?.LastMessage
             : current?.LastMessage;
+
+    private static string? ResolveError(AgentEvent value, SessionSnapshot? current) => value.Type switch
+    {
+        AgentEventType.Error => value.Text,
+        AgentEventType.SessionStart or AgentEventType.ToolStart or AgentEventType.ToolEnd
+            or AgentEventType.Message or AgentEventType.PermissionRequest or AgentEventType.Question => null,
+        _ => current?.Error
+    };
 
     private static string? ResolveActiveTool(AgentEvent value, SessionSnapshot? current) => value.Type switch
     {
