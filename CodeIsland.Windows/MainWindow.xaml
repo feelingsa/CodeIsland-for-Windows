@@ -39,10 +39,33 @@
             <Setter Property="VerticalAlignment" Value="Top"/>
         </Style>
         <Style x:Key="ActionButton" TargetType="Button">
-            <Setter Property="Foreground" Value="#FFD8D8DC"/><Setter Property="Background" Value="#FF202023"/>
-            <Setter Property="BorderBrush" Value="#FF303034"/><Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Padding" Value="10,5"/><Setter Property="Margin" Value="0,0,6,0"/>
-            <Setter Property="FontFamily" Value="Cascadia Mono, Consolas"/><Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="#FFE8E8EA"/><Setter Property="Background" Value="#FF18181A"/>
+            <Setter Property="BorderBrush" Value="#FF3B3B3F"/><Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="MinWidth" Value="72"/><Setter Property="Height" Value="30"/>
+            <Setter Property="Padding" Value="12,0"/><Setter Property="Margin" Value="0,0,7,0"/>
+            <Setter Property="FontFamily" Value="Cascadia Mono, Consolas"/><Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Bold"/><Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+                <Border x:Name="ActionChrome" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="3" SnapsToDevicePixels="True">
+                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                </Border>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ActionChrome" Property="Opacity" Value="0.86"/></Trigger>
+                    <Trigger Property="IsPressed" Value="True"><Setter TargetName="ActionChrome" Property="Opacity" Value="0.72"/></Trigger>
+                    <Trigger Property="IsEnabled" Value="False"><Setter TargetName="ActionChrome" Property="Opacity" Value="0.38"/></Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate></Setter.Value></Setter>
+        </Style>
+        <Style x:Key="ApproveActionButton" TargetType="Button" BasedOn="{StaticResource ActionButton}">
+            <Setter Property="Foreground" Value="#FF07130B"/><Setter Property="Background" Value="#FF42E879"/><Setter Property="BorderBrush" Value="#FF66F293"/>
+            <Style.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter Property="Foreground" Value="#FF07130B"/></Trigger></Style.Triggers>
+        </Style>
+        <Style x:Key="DenyActionButton" TargetType="Button" BasedOn="{StaticResource ActionButton}">
+            <Setter Property="Foreground" Value="#FFFF747B"/><Setter Property="BorderBrush" Value="#FF713137"/>
+        </Style>
+        <Style x:Key="AlwaysActionButton" TargetType="Button" BasedOn="{StaticResource ActionButton}">
+            <Setter Property="Foreground" Value="#FFFFC45A"/><Setter Property="BorderBrush" Value="#FF6C5227"/><Setter Property="MinWidth" Value="96"/>
         </Style>
     </Window.Resources>
 
@@ -99,10 +122,10 @@
                                             <TextBlock Margin="0,9,0,0" TextTrimming="CharacterEllipsis" Foreground="#FFE0E0E3" FontSize="14"><Run Text="> " Foreground="#FF37D067" FontWeight="Bold"/><Run Text="{Binding LastMessage, Mode=OneWay, TargetNullValue=working...}"/></TextBlock>
                                             <TextBlock Margin="0,6,0,0" TextTrimming="CharacterEllipsis" Foreground="#FF99999F" FontSize="14"><Run Text="$ " Foreground="#FFF27E4A" FontWeight="Bold"/><Run Text="{Binding Path=., Mode=OneWay, Converter={StaticResource SessionStatusTextConverter}}"/></TextBlock>
                                             <StackPanel Orientation="Horizontal" Margin="0,10,0,0"><StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding State}" Value="WaitingForPermission"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
-                                                <Button Style="{StaticResource ActionButton}" Content="{DynamicResource ApproveText}" Tag="{Binding PendingEventId}" Click="OnApproveClick"/><Button Style="{StaticResource ActionButton}" Content="{DynamicResource DenyText}" Tag="{Binding PendingEventId}" Click="OnDenyClick"/><Button Style="{StaticResource ActionButton}" Content="{DynamicResource AlwaysAllowText}" Tag="{Binding PendingEventId}" Click="OnAlwaysAllowClick"/>
+                                                <Button Style="{StaticResource ApproveActionButton}" Content="{DynamicResource ApproveText}" Tag="{Binding PendingEventId}" Click="OnApproveClick"/><Button Style="{StaticResource DenyActionButton}" Content="{DynamicResource DenyText}" Tag="{Binding PendingEventId}" Click="OnDenyClick"/><Button Style="{StaticResource AlwaysActionButton}" Content="{DynamicResource AlwaysAllowText}" Tag="{Binding PendingEventId}" Click="OnAlwaysAllowClick"/>
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="0,10,0,0"><StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding State}" Value="WaitingForAnswer"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
-                                                <TextBox Width="250" Tag="{Binding PendingEventId}" TextChanged="OnAnswerChanged" Padding="7,5" Background="#FF171719" Foreground="White" BorderBrush="#FF343438"/><Button Style="{StaticResource ActionButton}" Content="{DynamicResource SendText}" Tag="{Binding PendingEventId}" Click="OnAnswerClick" Margin="6,0,0,0"/>
+                                                <TextBox Width="250" Height="30" Tag="{Binding PendingEventId}" TextChanged="OnAnswerChanged" Padding="8,4" Background="#FF111113" Foreground="#FFE8E8EA" BorderBrush="#FF343438" CaretBrush="#FF42E879"/><Button Style="{StaticResource ApproveActionButton}" Content="{DynamicResource SendText}" Tag="{Binding PendingEventId}" Click="OnAnswerClick" Margin="7,0,0,0"/>
                                             </StackPanel>
                                         </StackPanel>
                                         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top">
