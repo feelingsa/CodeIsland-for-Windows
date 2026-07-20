@@ -57,6 +57,8 @@ public static class CodexTranscriptParser
         if (recordType != "response_item") return null;
         return payloadType switch
         {
+            "reasoning" => Create(context, Id(payload, timestamp), AgentEventType.Heartbeat,
+                timestamp, text: ReasoningSummary(payload), tool: "background"),
             "custom_tool_call" or "function_call" => Create(context, Id(payload, timestamp), AgentEventType.ToolStart,
                 timestamp, tool: ToolName(payload)),
             "custom_tool_call_output" or "function_call_output" => Create(context, Id(payload, timestamp), AgentEventType.ToolEnd,
@@ -84,6 +86,16 @@ public static class CodexTranscriptParser
             if (!string.IsNullOrWhiteSpace(text)) return Truncate(text);
         }
         return null;
+    }
+
+    private static string? ReasoningSummary(JsonElement payload)
+    {
+        if (!payload.TryGetProperty("summary", out var summary) || summary.ValueKind != JsonValueKind.Array)
+            return null;
+        var parts = summary.EnumerateArray()
+            .Select(item => String(item, "text"))
+            .Where(text => !string.IsNullOrWhiteSpace(text));
+        return Truncate(string.Join(" / ", parts));
     }
 
     private static string ToolName(JsonElement payload)

@@ -85,8 +85,11 @@ public sealed class SessionStateMachine
     private static string? ResolveMessage(AgentEvent value, SessionSnapshot? current) =>
         value.Type == AgentEventType.ToolStart
             ? value.Text ?? current?.LastMessage
-            : value.Type is AgentEventType.SessionStart or AgentEventType.Message
+            : value.Type == AgentEventType.SessionStart
+            ? value.Text
+            : value.Type is AgentEventType.Message
             or AgentEventType.Question or AgentEventType.PermissionRequest
+            || value.Type == AgentEventType.Heartbeat && !string.IsNullOrWhiteSpace(value.Text)
             || value.Type == AgentEventType.ToolEnd && !string.IsNullOrWhiteSpace(value.Text)
             ? value.Text ?? current?.LastMessage
             : current?.LastMessage;

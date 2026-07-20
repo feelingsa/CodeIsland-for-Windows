@@ -378,6 +378,12 @@ var reasoningEvent = CodexTranscriptParser.ParseLine(
     mcpContext);
 Require(reasoningEvent is { Type: AgentEventType.Heartbeat, Text: null, ToolName: "background" },
     "Internal reasoning must drive background animation without creating display text.");
+var reasoningSummaryEvent = CodexTranscriptParser.ParseLine(
+    "{\"timestamp\":\"2026-07-20T08:00:04Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"reasoning\",\"id\":\"reasoning-1\",\"summary\":[{\"type\":\"summary_text\",\"text\":\"Inspecting session state\"},{\"type\":\"summary_text\",\"text\":\"Preparing the update\"}],\"encrypted_content\":\"hidden\"}}",
+    mcpContext);
+Require(reasoningSummaryEvent is
+        { Type: AgentEventType.Heartbeat, Text: "Inspecting session state / Preparing the update", ToolName: "background" },
+    "Public Codex reasoning summaries must be displayed without exposing encrypted reasoning content.");
 var approvalEvent = CodexTranscriptParser.ParseLine(
     "{\"timestamp\":\"2026-07-20T08:00:05Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call\",\"call_id\":\"approval-1\",\"name\":\"shell_command\",\"input\":\"{\\\"sandbox_permissions\\\":\\\"require_escalated\\\",\\\"justification\\\":\\\"Allow this command?\\\"}\"}}",
     mcpContext);
@@ -405,6 +411,14 @@ liveStore.Apply(new AgentEvent("new-tool", "live-session", AgentKind.Codex,
 Require(liveStore.CurrentSession is
         { LastMessage: "Previous output", ActiveTool: "shell_command", IsExecutingTool: true },
     "A running tool must retain the last real output and enable the collapsed wave animation.");
+liveStore.Apply(new AgentEvent("new-turn", "live-session", AgentKind.Codex,
+    AgentEventType.SessionStart, DateTimeOffset.UtcNow));
+Require(liveStore.CurrentSession is { LastMessage: null, IsExecutingTool: true },
+    "A new Codex turn must immediately clear output left by the previous turn.");
+liveStore.Apply(reasoningSummaryEvent! with { SessionId = "live-session" });
+Require(liveStore.CurrentSession is
+        { LastMessage: "Inspecting session state / Preparing the update", IsExecutingTool: true },
+    "The first public reasoning summary must replace the empty new-turn display in real time.");
 liveStore.Apply(new AgentEvent("mcp-tool", "mcp-session", AgentKind.Codex,
     AgentEventType.ToolStart, DateTimeOffset.UtcNow, ToolName: "plugin codegraph/status"));
 liveStore.Apply(liveMessageEvent!);
