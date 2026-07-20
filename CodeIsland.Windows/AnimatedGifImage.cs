@@ -25,6 +25,7 @@ public sealed class AnimatedGifImage : System.Windows.Controls.Image
     public AnimatedGifImage()
     {
         Stretch = System.Windows.Media.Stretch.Uniform;
+        StretchDirection = StretchDirection.DownOnly;
         SnapsToDevicePixels = true;
         _timer.Tick += (_, _) =>
         {

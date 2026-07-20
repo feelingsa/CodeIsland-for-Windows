@@ -4,6 +4,16 @@ using CodeIsland.Windows;
 using CodeIsland.Bluetooth;
 using System.IO.Compression;
 
+var codexGifPath = Path.Combine(AppContext.BaseDirectory, "source", "codex.gif");
+using (var codexGif = System.Drawing.Image.FromFile(codexGifPath))
+{
+    Require(codexGif.Width == 32 && codexGif.Height == 32,
+        "Codex pet GIF must remain at its native 32x32 size.");
+    Require(codexGif.GetFrameCount(System.Drawing.Imaging.FrameDimension.Time) == 6,
+        "Codex pet GIF must contain six animation frames.");
+}
+Console.WriteLine("SMOKE PASS: opaque 32x32 six-frame Codex pet GIF verified.");
+
 var store = new DesktopSessionStore();
 var request = new AgentEvent(
     "permission-1", "session-1", AgentKind.Codex, AgentEventType.PermissionRequest,
