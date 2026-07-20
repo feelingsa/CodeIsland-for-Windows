@@ -38,6 +38,9 @@ if (command == "self-test")
         Require(registration?.Command.Contains(Path.GetFullPath(bridge), StringComparison.Ordinal) == true,
             "Registration must invoke the selected Bridge executable.");
         Require(registration?.Events.SequenceEqual(tool.Events) == true, "Registration must contain all tool events.");
+        Require(tool.Events.SequenceEqual(["SessionStart", "SessionEnd", "UserPromptSubmit", "PreToolUse",
+                "PostToolUse", "PermissionRequest", "Stop"]),
+            "Codex must install the complete upstream-compatible hook event set.");
         Require(registration?.ProtocolVersion == HookRegistration.CurrentProtocolVersion,
             "Registration must contain the current protocol version.");
         var codexRoot = JsonNode.Parse(File.ReadAllText(configPath))!.AsObject();

@@ -25,7 +25,8 @@ public sealed class ToolDetector
         var registration = configExists ? _store.Read(config!, tool.HookMarker) : null;
         var markerPresent = registration is not null;
         var currentVersion = registration?.ProtocolVersion == HookRegistration.CurrentProtocolVersion
-            && registration.InstallerVersion == HookRegistration.CurrentInstallerVersion;
+            && registration.InstallerVersion == HookRegistration.CurrentInstallerVersion
+            && registration.Events.SequenceEqual(tool.Events);
         var problem = executable is null
             ? "Executable not found on PATH."
             : !configExists

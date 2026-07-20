@@ -29,10 +29,27 @@ else if (mode == "send" && args.Length >= 2)
         agentEvent.Type is AgentEventType.PermissionRequest or AgentEventType.Question
             ? TimeSpan.FromHours(8)
             : TimeSpan.FromSeconds(3));
-    Console.WriteLine(PipeJson.Serialize(response));
+    Console.WriteLine(HookResponse(response, agentEvent, source));
 }
 else if (mode == "self-test")
 {
+    var permissionEvent = new AgentEvent("permission-1", "session-1", AgentKind.Codex,
+        AgentEventType.PermissionRequest, DateTimeOffset.UtcNow);
+    foreach (var (action, behavior) in new[]
+             {
+                 (UserAction.Approve, "allow"),
+                 (UserAction.AlwaysAllow, "always"),
+                 (UserAction.Deny, "deny")
+             })
+    {
+        var hookResponse = HookResponse(new PipeMessage(PipeMessageType.ActionResponse, "response-1",
+            AckFor: permissionEvent.EventId, Action: action), permissionEvent, "codex");
+        using var hookDocument = JsonDocument.Parse(hookResponse);
+        var actual = hookDocument.RootElement.GetProperty("hookSpecificOutput").GetProperty("decision")
+            .GetProperty("behavior").GetString();
+        if (actual != behavior) throw new InvalidOperationException($"Expected Codex behavior {behavior}, got {actual}.");
+    }
+
     using var stop = new CancellationTokenSource();
     var machine = new SessionStateMachine();
     await using var server = CreateServer(machine);
@@ -115,3 +132,26 @@ static JsonSerializerOptions CreateEventJsonOptions() => new(JsonSerializerDefau
     PropertyNameCaseInsensitive = true,
     Converters = { new JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower) }
 };
+
+static string HookResponse(PipeMessage response, AgentEvent agentEvent, string? source)
+{
+    if (agentEvent.Type != AgentEventType.PermissionRequest
+        || !string.Equals(source, "codex", StringComparison.OrdinalIgnoreCase)
+        || response.Type != PipeMessageType.ActionResponse)
+        return PipeJson.Serialize(response);
+
+    var behavior = response.Action switch
+    {
+        UserAction.Approve => "allow",
+        UserAction.AlwaysAllow => "always",
+        _ => "deny"
+    };
+    return JsonSerializer.Serialize(new
+    {
+        hookSpecificOutput = new
+        {
+            hookEventName = "PermissionRequest",
+            decision = new { behavior }
+        }
+    });
+}
