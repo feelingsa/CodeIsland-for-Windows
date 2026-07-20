@@ -60,13 +60,22 @@ public sealed class SessionStatusTextConverter : IValueConverter
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         var collapsed = string.Equals(parameter as string, "collapsed", StringComparison.OrdinalIgnoreCase);
+        if (collapsed)
+            return value switch
+            {
+                null => "CODEISLAND 0",
+                SessionSnapshot { Error: { Length: > 0 } error } => error,
+                SessionSnapshot { State: SessionState.WaitingForPermission } => "waiting for approval_",
+                SessionSnapshot { State: SessionState.WaitingForAnswer } => "waiting for answer_",
+                SessionSnapshot { LastMessage: { Length: > 0 } message } => message,
+                _ => "CODEISLAND 1"
+            };
         return value switch
         {
             null => "CODEISLAND 0",
             SessionSnapshot { Error: { Length: > 0 } error } => error,
             SessionSnapshot { State: SessionState.WaitingForPermission } => "waiting for approval_",
             SessionSnapshot { State: SessionState.WaitingForAnswer } => "waiting for answer_",
-            SessionSnapshot { LastMessage: { Length: > 0 } message } when collapsed => message,
             SessionSnapshot { State: SessionState.Completed } => "completed",
             SessionSnapshot { State: SessionState.Failed } => "failed_",
             SessionSnapshot { ActiveTool: { Length: > 0 } tool } => $"running {tool}_",

@@ -387,13 +387,22 @@ var inputEvent = CodexTranscriptParser.ParseLine(
     mcpContext);
 Require(inputEvent is { Type: AgentEventType.ToolStart, ToolName: "approval user input" },
     "Codex user-input requests must be marked for automatic panel expansion.");
+var commandEvent = CodexTranscriptParser.ParseLine(
+    "{\"timestamp\":\"2026-07-20T08:00:07Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call\",\"call_id\":\"command-1\",\"name\":\"exec\",\"input\":\"const r = await tools.shell_command({\\\"command\\\":\\\"dotnet test CodeIsland.Core.Tests\\\",\\\"workdir\\\":\\\"E:\\\\\\\\Demo\\\"});\"}}",
+    mcpContext);
+Require(commandEvent is { Type: AgentEventType.ToolStart, Text: "dotnet test CodeIsland.Core.Tests" },
+    "Collapsed tool status must expose the real shell command instead of running exec_.");
+var syntheticStatusSession = resumedSession with { LastMessage = null, ActiveTool = "exec" };
+Require((string)statusConverter.Convert(syntheticStatusSession, typeof(string), "collapsed",
+            System.Globalization.CultureInfo.InvariantCulture) == "CODEISLAND 1",
+    "Collapsed status must never fabricate running exec_ or thinking_.");
 var liveStore = new DesktopSessionStore();
 liveStore.Apply(new AgentEvent("old-message", "live-session", AgentKind.Codex,
     AgentEventType.Message, DateTimeOffset.UtcNow, Text: "Previous output"));
 liveStore.Apply(new AgentEvent("new-tool", "live-session", AgentKind.Codex,
     AgentEventType.ToolStart, DateTimeOffset.UtcNow, ToolName: "shell_command"));
-Require(liveStore.CurrentSession is { LastMessage: null, ActiveTool: "shell_command" },
-    "A new tool call must clear stale output until fresh Codex content arrives.");
+Require(liveStore.CurrentSession is { LastMessage: "Previous output", ActiveTool: "shell_command" },
+    "A tool event without display text must retain the last real Codex output.");
 liveStore.Apply(liveMessageEvent!);
 liveStore.Apply(new AgentEvent("live-end", "mcp-session", AgentKind.Codex,
     AgentEventType.SessionEnd, DateTimeOffset.UtcNow));
