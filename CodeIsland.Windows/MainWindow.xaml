@@ -117,14 +117,14 @@
                 </Grid>
             </Grid>
 
-            <Grid x:Name="CollapsedPanel" Visibility="Collapsed" Margin="8,5">
+            <Grid x:Name="CollapsedPanel" Visibility="Collapsed" Margin="8,4">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="40"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                 <local:AnimatedGifImage Width="32" Height="32" HorizontalAlignment="Center" VerticalAlignment="Center"
                     RenderOptions.BitmapScalingMode="NearestNeighbor" SourcePath="{Binding CurrentSession.Agent, Mode=OneWay, Converter={StaticResource AgentGifPathConverter}}"/>
-                <Border Grid.Column="1" Margin="4,0,8,0" BorderBrush="#FF123D21" BorderThickness="0,0,0,1" VerticalAlignment="Center" Padding="0,0,0,4">
+                <Border Grid.Column="1" Margin="4,0,8,0" BorderBrush="#FF123D21" BorderThickness="0,0,0,1" VerticalAlignment="Center" Padding="0,0,0,2">
                     <TextBlock Text="{Binding CurrentSession, Mode=OneWay, Converter={StaticResource SessionStatusTextConverter}}"
                         Foreground="#FF39E46E" FontFamily="Cascadia Mono, Consolas" FontWeight="Bold" FontSize="14"
-                        TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" MaxHeight="21"/>
+                        TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" MaxHeight="20"/>
                 </Border>
             </Grid>
         </Grid>
