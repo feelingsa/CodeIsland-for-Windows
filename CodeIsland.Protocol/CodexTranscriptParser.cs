@@ -40,11 +40,11 @@ public static class CodexTranscriptParser
                     text: Truncate(String(payload, "message"))),
                 "agent_reasoning" => null,
                 "patch_apply_begin" => Create(context, Id(payload, timestamp), AgentEventType.ToolStart, timestamp,
-                    text: "apply_patch", tool: "apply_patch"),
+                    tool: "apply_patch"),
                 "patch_apply_end" => Create(context, Id(payload, timestamp), AgentEventType.ToolEnd, timestamp,
                     tool: "apply_patch"),
                 "mcp_tool_call_begin" => Create(context, Id(payload, timestamp), AgentEventType.ToolStart, timestamp,
-                    text: McpTool(payload), tool: McpTool(payload)),
+                    tool: McpTool(payload)),
                 "mcp_tool_call_end" => Create(context, Id(payload, timestamp), AgentEventType.ToolEnd, timestamp,
                     tool: McpTool(payload)),
                 "task_complete" or "turn_complete" => Create(context, Id(payload, timestamp), AgentEventType.SessionEnd, timestamp),
@@ -57,7 +57,7 @@ public static class CodexTranscriptParser
         return payloadType switch
         {
             "custom_tool_call" or "function_call" => Create(context, Id(payload, timestamp), AgentEventType.ToolStart,
-                timestamp, text: ToolDisplayText(payload), tool: ToolName(payload)),
+                timestamp, tool: ToolName(payload)),
             "custom_tool_call_output" or "function_call_output" => Create(context, Id(payload, timestamp), AgentEventType.ToolEnd,
                 timestamp, tool: "tool"),
             "message" when String(payload, "role") == "assistant" => Create(context, Id(payload, timestamp),
@@ -96,41 +96,6 @@ public static class CodexTranscriptParser
                     && input.Contains("justification", StringComparison.OrdinalIgnoreCase)))
             return "approval terminal";
         return NestedMcpTool(payload) ?? name;
-    }
-
-    private static string ToolDisplayText(JsonElement payload)
-    {
-        var tool = ToolName(payload);
-        var input = String(payload, "input", "arguments");
-        if (string.IsNullOrWhiteSpace(input)) return tool;
-        if (TryCommand(input, out var command)) return Truncate(command) ?? tool;
-        return tool.StartsWith("plugin ", StringComparison.OrdinalIgnoreCase) ? tool : Truncate(input) ?? tool;
-    }
-
-    private static bool TryCommand(string input, out string command)
-    {
-        command = string.Empty;
-        try
-        {
-            using var document = JsonDocument.Parse(input);
-            if (document.RootElement.ValueKind == JsonValueKind.Object
-                && String(document.RootElement, "command") is { Length: > 0 } parsed)
-            {
-                command = parsed;
-                return true;
-            }
-        }
-        catch (JsonException) { }
-
-        var match = Regex.Match(input, "\\\"command\\\"\\s*:\\s*(?<value>\\\"(?:\\\\.|[^\\\"])*\\\")",
-            RegexOptions.CultureInvariant);
-        if (!match.Success) return false;
-        try
-        {
-            command = JsonSerializer.Deserialize<string>(match.Groups["value"].Value) ?? string.Empty;
-            return !string.IsNullOrWhiteSpace(command);
-        }
-        catch (JsonException) { return false; }
     }
 
     private static string? Truncate(string? text) => string.IsNullOrWhiteSpace(text)

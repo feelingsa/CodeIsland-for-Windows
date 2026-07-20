@@ -36,7 +36,8 @@ public sealed class SessionStateMachine
                 : null,
             ResolveError(agentEvent, current),
             agentEvent.ProcessId ?? current?.ProcessId,
-            agentEvent.TerminalKind ?? current?.TerminalKind);
+            agentEvent.TerminalKind ?? current?.TerminalKind,
+            ResolveExecutingTool(agentEvent, current));
 
         return true;
     }
@@ -105,6 +106,13 @@ public sealed class SessionStateMachine
         AgentEventType.SessionEnd => null,
         AgentEventType.Error => null,
         _ => current?.ActiveTool
+    };
+
+    private static bool ResolveExecutingTool(AgentEvent value, SessionSnapshot? current) => value.Type switch
+    {
+        AgentEventType.ToolStart => true,
+        AgentEventType.Message or AgentEventType.ToolEnd or AgentEventType.SessionEnd or AgentEventType.Error => false,
+        _ => current?.IsExecutingTool ?? false
     };
 
     private static void Validate(AgentEvent value)

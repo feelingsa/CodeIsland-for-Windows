@@ -13,4 +13,5 @@ public sealed record SessionSnapshot(
     string? PendingEventId,
     string? Error,
     int? ProcessId,
-    string? TerminalKind);
+    string? TerminalKind,
+    bool IsExecutingTool = false);

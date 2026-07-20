@@ -390,8 +390,8 @@ Require(inputEvent is { Type: AgentEventType.ToolStart, ToolName: "approval user
 var commandEvent = CodexTranscriptParser.ParseLine(
     "{\"timestamp\":\"2026-07-20T08:00:07Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call\",\"call_id\":\"command-1\",\"name\":\"exec\",\"input\":\"const r = await tools.shell_command({\\\"command\\\":\\\"dotnet test CodeIsland.Core.Tests\\\",\\\"workdir\\\":\\\"E:\\\\\\\\Demo\\\"});\"}}",
     mcpContext);
-Require(commandEvent is { Type: AgentEventType.ToolStart, Text: "dotnet test CodeIsland.Core.Tests" },
-    "Collapsed tool status must expose the real shell command instead of running exec_.");
+Require(commandEvent is { Type: AgentEventType.ToolStart, Text: null },
+    "Shell commands must not be copied into the collapsed output text.");
 var syntheticStatusSession = resumedSession with { LastMessage = null, ActiveTool = "exec" };
 Require((string)statusConverter.Convert(syntheticStatusSession, typeof(string), "collapsed",
             System.Globalization.CultureInfo.InvariantCulture) == "CODEISLAND 1",
@@ -401,9 +401,14 @@ liveStore.Apply(new AgentEvent("old-message", "live-session", AgentKind.Codex,
     AgentEventType.Message, DateTimeOffset.UtcNow, Text: "Previous output"));
 liveStore.Apply(new AgentEvent("new-tool", "live-session", AgentKind.Codex,
     AgentEventType.ToolStart, DateTimeOffset.UtcNow, ToolName: "shell_command"));
-Require(liveStore.CurrentSession is { LastMessage: "Previous output", ActiveTool: "shell_command" },
-    "A tool event without display text must retain the last real Codex output.");
+Require(liveStore.CurrentSession is
+        { LastMessage: "Previous output", ActiveTool: "shell_command", IsExecutingTool: true },
+    "A running tool must retain the last real output and enable the collapsed wave animation.");
+liveStore.Apply(new AgentEvent("mcp-tool", "mcp-session", AgentKind.Codex,
+    AgentEventType.ToolStart, DateTimeOffset.UtcNow, ToolName: "plugin codegraph/status"));
 liveStore.Apply(liveMessageEvent!);
+Require(liveStore.Sessions.Single(value => value.SessionId == "mcp-session").IsExecutingTool == false,
+    "Fresh Codex output must stop the collapsed wave animation immediately.");
 liveStore.Apply(new AgentEvent("live-end", "mcp-session", AgentKind.Codex,
     AgentEventType.SessionEnd, DateTimeOffset.UtcNow));
 var completedLiveSession = liveStore.Sessions.Single(value => value.SessionId == "mcp-session");
