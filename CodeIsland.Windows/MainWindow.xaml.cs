@@ -249,7 +249,7 @@ public partial class MainWindow : Window
 
     private Rect GetWorkingArea()
     {
-        var area = DisplayPositioner.SelectWorkingArea(_settings.DisplayMode);
+        var area = DisplayPositioner.WorkingAreaForWindow(NativeHandle);
         var transform = PresentationSource.FromVisual(this)?.CompositionTarget?.TransformToDevice;
         var scaleX = transform?.M11 ?? 1;
         var scaleY = transform?.M22 ?? 1;

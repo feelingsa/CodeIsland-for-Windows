@@ -13,6 +13,11 @@ public static class DisplayPositioner
         return screen?.WorkingArea ?? new Rectangle(0, 0, 1920, 1080);
     }
 
+    public static Rectangle WorkingAreaForWindow(IntPtr windowHandle) =>
+        windowHandle == IntPtr.Zero
+            ? Screen.PrimaryScreen?.WorkingArea ?? new Rectangle(0, 0, 1920, 1080)
+            : Screen.FromHandle(windowHandle).WorkingArea;
+
     public static (double Left, double Top) TopCenter(Rectangle workingAreaPixels,
         double dpiScaleX, double dpiScaleY, double widthDip, double topDip = 14)
     {
