@@ -236,6 +236,9 @@ public partial class MainWindow : Window
         Left = placement.Left;
         Top = placement.Top;
         PanelBorder.CornerRadius = placement.Corners;
+        PanelBorder.BorderThickness = placement.Edges == DockEdges.None
+            ? new Thickness(1)
+            : new Thickness(0);
         var shoulderDepth = Math.Min(38, Math.Min(ActualWidth, ActualHeight) * .25);
         var shoulders = DockShoulderGeometry.Create(
             new System.Windows.Size(ActualWidth, ActualHeight), placement.Edges, shoulderDepth);
