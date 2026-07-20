@@ -57,18 +57,23 @@ public sealed class SessionStateBrushConverter : IValueConverter
 
 public sealed class SessionStatusTextConverter : IValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) => value switch
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        null => "CODEISLAND 0",
-        SessionSnapshot { Error: { Length: > 0 } error } => error,
-        SessionSnapshot { State: SessionState.WaitingForPermission } => "waiting for approval_",
-        SessionSnapshot { State: SessionState.WaitingForAnswer } => "waiting for answer_",
-        SessionSnapshot { State: SessionState.Completed } => "completed",
-        SessionSnapshot { State: SessionState.Failed } => "failed_",
-        SessionSnapshot { ActiveTool: { Length: > 0 } tool } => $"running {tool}_",
-        SessionSnapshot { LastMessage: { Length: > 0 } message } => message,
-        _ => "thinking_"
-    };
+        var collapsed = string.Equals(parameter as string, "collapsed", StringComparison.OrdinalIgnoreCase);
+        return value switch
+        {
+            null => "CODEISLAND 0",
+            SessionSnapshot { Error: { Length: > 0 } error } => error,
+            SessionSnapshot { State: SessionState.WaitingForPermission } => "waiting for approval_",
+            SessionSnapshot { State: SessionState.WaitingForAnswer } => "waiting for answer_",
+            SessionSnapshot { State: SessionState.Completed } => "completed",
+            SessionSnapshot { State: SessionState.Failed } => "failed_",
+            SessionSnapshot { LastMessage: { Length: > 0 } message } when collapsed => message,
+            SessionSnapshot { ActiveTool: { Length: > 0 } tool } => $"running {tool}_",
+            SessionSnapshot { LastMessage: { Length: > 0 } message } => message,
+            _ => "thinking_"
+        };
+    }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
         throw new NotSupportedException();

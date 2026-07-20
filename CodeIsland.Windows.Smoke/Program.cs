@@ -112,12 +112,17 @@ resumed.Apply(new AgentEvent("resume-error", "resume-session", AgentKind.Codex,
     AgentEventType.Error, DateTimeOffset.UtcNow, Text: "Codex task failed"));
 resumed.Apply(new AgentEvent("resume-message", "resume-session", AgentKind.Codex,
     AgentEventType.Message, DateTimeOffset.UtcNow, Text: "Continuing with live output"));
-Require(resumed.CurrentSession is { State: SessionState.Running, Error: null }
-        && resumed.CurrentSession.LastMessage == "Continuing with live output",
+var resumedSession = resumed.CurrentSession ?? throw new InvalidOperationException("Resumed session is missing.");
+Require(resumedSession is { State: SessionState.Running, Error: null }
+        && resumedSession.LastMessage == "Continuing with live output",
     "A resumed Codex session must clear its stale failure and expose live output.");
-Require((string)new SessionStatusTextConverter().Convert(resumed.CurrentSession, typeof(string), null!,
+Require((string)new SessionStatusTextConverter().Convert(resumedSession, typeof(string), null!,
             System.Globalization.CultureInfo.InvariantCulture) == "Continuing with live output",
     "Collapsed panel must show resumed live output instead of the previous failure.");
+var liveWithTool = resumedSession with { ActiveTool = "shell", LastMessage = "Streaming command output" };
+Require((string)new SessionStatusTextConverter().Convert(liveWithTool, typeof(string), "collapsed",
+            System.Globalization.CultureInfo.InvariantCulture) == "Streaming command output",
+    "Collapsed panel must prioritize live output while a tool is still running.");
 Console.WriteLine("SMOKE PASS: interrupted Codex session resumes with live collapsed status.");
 
 var prioritized = new DesktopSessionStore(maxVisibleSessions: 3);
