@@ -450,11 +450,13 @@ try
     ]);
     var transcriptEvents = new List<AgentEvent>();
     using var liveSignal = new ManualResetEventSlim();
+    using var partialLineSignal = new ManualResetEventSlim();
     using var tailer = new CodexSessionTailer(transcriptRoot);
     tailer.EventReceived += (_, agentEvent) =>
     {
         lock (transcriptEvents) transcriptEvents.Add(agentEvent);
         if (agentEvent.ToolName == "shell") liveSignal.Set();
+        if (agentEvent.Text == "Partial line delivered immediately") partialLineSignal.Set();
     };
     tailer.Start(TimeSpan.FromDays(1));
     lock (transcriptEvents)
@@ -464,7 +466,15 @@ try
         + "{\"timestamp\":\"2026-07-17T08:00:02Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call\",\"call_id\":\"call-1\",\"name\":\"shell\"}}"
         + Environment.NewLine);
     Require(liveSignal.Wait(TimeSpan.FromSeconds(5)), "Tailer must emit events appended after startup.");
-    Console.WriteLine("SMOKE PASS: Codex active-session recovery and live JSONL tailing verified.");
+    var partialLine = "{\"timestamp\":\"2026-07-17T08:00:03Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"agent_message\",\"message\":\"Partial line delivered immediately\"}}";
+    var splitAt = partialLine.Length / 2;
+    File.AppendAllText(transcript, partialLine[..splitAt]);
+    Require(!partialLineSignal.Wait(TimeSpan.FromMilliseconds(250)),
+        "Tailer must retain an incomplete JSONL record instead of advancing past it.");
+    File.AppendAllText(transcript, partialLine[splitAt..] + Environment.NewLine);
+    Require(partialLineSignal.Wait(TimeSpan.FromSeconds(2)),
+        "Tailer polling must deliver a completed partial JSONL record without waiting for another event.");
+    Console.WriteLine("SMOKE PASS: Codex active-session recovery, partial writes and low-latency JSONL tailing verified.");
 }
 finally
 {
