@@ -67,6 +67,37 @@
         <Style x:Key="AlwaysActionButton" TargetType="Button" BasedOn="{StaticResource ActionButton}">
             <Setter Property="Foreground" Value="#FFFFC45A"/><Setter Property="BorderBrush" Value="#FF6C5227"/><Setter Property="MinWidth" Value="96"/>
         </Style>
+        <Style x:Key="ScrollPageButton" TargetType="RepeatButton">
+            <Setter Property="Focusable" Value="False"/><Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="RepeatButton">
+                <Border Background="{TemplateBinding Background}"/>
+            </ControlTemplate></Setter.Value></Setter>
+        </Style>
+        <Style x:Key="DarkScrollThumb" TargetType="Thumb">
+            <Setter Property="MinHeight" Value="30"/><Setter Property="Margin" Value="1,2"/>
+            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Thumb">
+                <Border x:Name="ThumbChrome" Background="#FF4A4A4F" CornerRadius="3"/>
+                <ControlTemplate.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ThumbChrome" Property="Background" Value="#FF68686E"/></Trigger>
+                    <Trigger Property="IsDragging" Value="True"><Setter TargetName="ThumbChrome" Property="Background" Value="#FF85858B"/></Trigger>
+                    <Trigger Property="IsEnabled" Value="False"><Setter TargetName="ThumbChrome" Property="Opacity" Value="0.35"/></Trigger>
+                </ControlTemplate.Triggers>
+            </ControlTemplate></Setter.Value></Setter>
+        </Style>
+        <Style x:Key="DarkVerticalScrollBar" TargetType="ScrollBar">
+            <Setter Property="Width" Value="8"/><Setter Property="Margin" Value="5,2,0,2"/>
+            <Setter Property="Background" Value="#FF09090A"/>
+            <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ScrollBar">
+                <Border Background="{TemplateBinding Background}" CornerRadius="4">
+                    <Track x:Name="PART_Track" IsDirectionReversed="True" Focusable="False">
+                        <Track.DecreaseRepeatButton><RepeatButton Style="{StaticResource ScrollPageButton}" Command="ScrollBar.PageUpCommand"/></Track.DecreaseRepeatButton>
+                        <Track.Thumb><Thumb Style="{StaticResource DarkScrollThumb}"/></Track.Thumb>
+                        <Track.IncreaseRepeatButton><RepeatButton Style="{StaticResource ScrollPageButton}" Command="ScrollBar.PageDownCommand"/></Track.IncreaseRepeatButton>
+                    </Track>
+                </Border>
+            </ControlTemplate></Setter.Value></Setter>
+        </Style>
     </Window.Resources>
 
     <Grid x:Name="PanelChrome" RenderTransformOrigin="0.5,0.5">
@@ -101,6 +132,7 @@
                         <TextBlock Text="{DynamicResource IdleText}" Foreground="#FF76767C" FontSize="13" HorizontalAlignment="Center" Margin="0,7,0,0"/>
                     </StackPanel>
                     <ScrollViewer MaxHeight="560" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,8,0,0">
+                        <ScrollViewer.Resources><Style TargetType="ScrollBar" BasedOn="{StaticResource DarkVerticalScrollBar}"/></ScrollViewer.Resources>
                         <ItemsControl ItemsSource="{Binding Sessions}">
                             <ItemsControl.GroupStyle><GroupStyle><GroupStyle.HeaderTemplate><DataTemplate>
                                 <StackPanel Orientation="Horizontal" Margin="8,12,0,8">
