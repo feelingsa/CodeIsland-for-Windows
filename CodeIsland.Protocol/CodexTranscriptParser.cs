@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using CodeIsland.Core;
 
 namespace CodeIsland.Protocol;
@@ -57,7 +58,7 @@ public static class CodexTranscriptParser
         return payloadType switch
         {
             "custom_tool_call" or "function_call" => Create(context, Id(payload, timestamp), AgentEventType.ToolStart,
-                timestamp, tool: String(payload, "name") ?? "tool"),
+                timestamp, tool: NestedMcpTool(payload) ?? String(payload, "name") ?? "tool"),
             "custom_tool_call_output" or "function_call_output" => Create(context, Id(payload, timestamp), AgentEventType.ToolEnd,
                 timestamp, tool: "tool"),
             "message" when String(payload, "role") == "assistant" => Create(context, Id(payload, timestamp),
@@ -99,6 +100,18 @@ public static class CodexTranscriptParser
             (_, { Length: > 0 }) => $"plugin {tool}",
             _ => "plugin"
         };
+    }
+
+    private static string? NestedMcpTool(JsonElement payload)
+    {
+        var input = String(payload, "input", "arguments");
+        if (string.IsNullOrWhiteSpace(input)) return null;
+        var match = Regex.Match(input,
+            @"tools\.mcp__(?<server>[A-Za-z0-9_]+)__(?<tool>[A-Za-z0-9_]+)",
+            RegexOptions.CultureInvariant);
+        return match.Success
+            ? $"plugin {match.Groups["server"].Value}/{match.Groups["tool"].Value}"
+            : null;
     }
 
     private static string? String(JsonElement element, params string[] names)

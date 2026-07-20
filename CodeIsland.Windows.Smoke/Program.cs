@@ -357,6 +357,12 @@ mcpStore.Apply(mcpEvent!);
 Require(mcpStore.CurrentSession?.LastMessage == "plugin node_repl/js completed",
     "Completed plugin calls must remain visible in the session status.");
 Console.WriteLine("SMOKE PASS: Codex MCP/plugin call parsing and visible completion status verified.");
+var nestedMcpEvent = CodexTranscriptParser.ParseLine(
+    "{\"timestamp\":\"2026-07-20T08:00:02Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call\",\"call_id\":\"outer-1\",\"name\":\"exec\",\"input\":\"const r = await tools.mcp__codegraph__codegraph_status({projectPath: \\\"E:\\\\\\\\Demo\\\"});\"}}",
+    mcpContext);
+Require(nestedMcpEvent is { Type: AgentEventType.ToolStart, ToolName: "plugin codegraph/codegraph_status" },
+    "Nested MCP calls must expose the plugin name before the invocation completes.");
+Console.WriteLine("SMOKE PASS: nested CodeGraph invocation is identified before completion.");
 var transcriptRoot = Path.Combine(Path.GetTempPath(), $"codeisland-transcript-{Guid.NewGuid():N}");
 try
 {

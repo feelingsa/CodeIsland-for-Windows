@@ -332,7 +332,9 @@ public partial class MainWindow : Window
 
     private void OnEventApplied(object? sender, AgentEvent agentEvent)
     {
-        if (agentEvent.Type is AgentEventType.PermissionRequest or AgentEventType.Question or AgentEventType.Error)
+        if (agentEvent.Type is AgentEventType.PermissionRequest or AgentEventType.Question or AgentEventType.Error
+            || agentEvent.Type is AgentEventType.ToolStart or AgentEventType.ToolEnd
+                && agentEvent.ToolName?.StartsWith("plugin ", StringComparison.OrdinalIgnoreCase) == true)
             ExpandPanel();
         if (!SystemParameters.ClientAreaAnimation) return;
         var easing = new QuadraticEase { EasingMode = EasingMode.EaseOut };
