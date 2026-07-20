@@ -4,6 +4,26 @@ using CodeIsland.Windows;
 using CodeIsland.Bluetooth;
 using System.IO.Compression;
 
+var appIconPath = Path.Combine(AppContext.BaseDirectory, "source", "codeisland.png");
+using (var appIcon = new System.Drawing.Bitmap(appIconPath))
+{
+    Require(appIcon.Width == 256 && appIcon.Height == 256 && appIcon.GetPixel(0, 0).A == 0,
+        "Application pixel icon must be 256x256 with a transparent background.");
+}
+var appIcoPath = Path.Combine(AppContext.BaseDirectory, "source", "codeisland.ico");
+using (var appIco = new System.Drawing.Icon(appIcoPath))
+    Require(appIco.Width == 256 && appIco.Height == 256, "Application ICO must contain the 256px pixel icon.");
+using (var trayMenu = TrayMenuFactory.Create())
+{
+    trayMenu.Items.Add("Open panel");
+    Require(trayMenu.BackColor == System.Drawing.Color.FromArgb(8, 8, 9)
+            && trayMenu.ForeColor == System.Drawing.Color.FromArgb(232, 232, 235),
+        "Tray menu must use the black CodeIsland palette.");
+    Require(trayMenu.Items[0].Height == 34 && !trayMenu.ShowImageMargin,
+        "Tray menu items must use the compact pixel-theme layout.");
+}
+Console.WriteLine("SMOKE PASS: transparent app icon and pixel-theme tray menu verified.");
+
 var codexGifPath = Path.Combine(AppContext.BaseDirectory, "source", "codex.gif");
 using (var codexGif = System.Drawing.Image.FromFile(codexGifPath))
 {

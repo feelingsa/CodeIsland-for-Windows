@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <Content Include="..\source\*.gif" Link="source\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\source\codeisland.png" Link="source\codeisland.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\source\codeisland.ico" Link="source\codeisland.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -17,6 +19,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon>..\source\codeisland.ico</ApplicationIcon>
   </PropertyGroup>
 
 </Project>

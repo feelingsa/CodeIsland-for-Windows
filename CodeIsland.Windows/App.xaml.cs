@@ -21,6 +21,7 @@ public partial class App : Application
     private EventWaitHandle? _showPanelEvent;
     private RegisteredWaitHandle? _showPanelRegistration;
     private NotifyIcon? _tray;
+    private System.Drawing.Icon? _appIcon;
     private MainWindow? _window;
     private PipeServer? _pipeServer;
     private CancellationTokenSource? _pipeStop;
@@ -89,13 +90,17 @@ public partial class App : Application
         _cleanupTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
         _cleanupTimer.Tick += (_, _) => Sessions.RemoveExpired(DateTimeOffset.UtcNow.AddMinutes(-_settings.SessionCleanupMinutes));
         _cleanupTimer.Start();
+        var iconPath = Path.Combine(AppContext.BaseDirectory, "source", "codeisland.ico");
+        _appIcon = File.Exists(iconPath)
+            ? new System.Drawing.Icon(iconPath)
+            : (System.Drawing.Icon)System.Drawing.SystemIcons.Application.Clone();
         _tray = new NotifyIcon
         {
-            Icon = System.Drawing.SystemIcons.Application,
+            Icon = _appIcon,
             Visible = true,
             Text = "CodeIsland"
         };
-        var menu = new ContextMenuStrip();
+        var menu = TrayMenuFactory.Create();
         menu.Items.Add("打开面板", null, (_, _) => ShowPanel());
         menu.Items.Add("收起面板", null, (_, _) => _window.Hide());
         menu.Items.Add("设置", null, (_, _) => OpenSettings());
@@ -249,6 +254,7 @@ public partial class App : Application
         _pipeServer?.DisposeAsync().AsTask().GetAwaiter().GetResult();
         _pipeStop?.Dispose();
         _tray?.Dispose();
+        _appIcon?.Dispose();
         _showPanelRegistration?.Unregister(null);
         _showPanelEvent?.Dispose();
         _instanceMutex?.Dispose();

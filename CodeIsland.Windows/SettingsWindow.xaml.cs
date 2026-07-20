@@ -3,6 +3,8 @@ using System.Windows.Controls;
 using CodeIsland.Hooks;
 using System.IO;
 using WpfButton = System.Windows.Controls.Button;
+using System.Windows.Input;
+using System.Windows.Media.Imaging;
 
 namespace CodeIsland.Windows;
 
@@ -16,6 +18,13 @@ public partial class SettingsWindow : Window
     public SettingsWindow(SettingsStore store, AppSettings settings, Action<AppSettings> applied, Func<string> hotKeyStatus)
     {
         InitializeComponent();
+        var iconPath = Path.Combine(AppContext.BaseDirectory, "source", "codeisland.png");
+        if (File.Exists(iconPath))
+        {
+            var icon = new BitmapImage(new Uri(iconPath, UriKind.Absolute));
+            TitleAppIcon.Source = icon;
+            AboutAppIcon.Source = icon;
+        }
         _store = store;
         _settings = settings;
         _applied = applied;
@@ -70,6 +79,12 @@ public partial class SettingsWindow : Window
 
     private static int Parse(string text, int fallback) => int.TryParse(text, out var value) ? value : fallback;
     private void OnCancel(object sender, RoutedEventArgs e) => Close();
+    private void OnTitleBarMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.LeftButton == MouseButtonState.Pressed && e.ClickCount == 1) DragMove();
+    }
+    private void OnMinimize(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
+    private void OnWindowClose(object sender, RoutedEventArgs e) => Close();
     private void OnDefaults(object sender, RoutedEventArgs e)
     {
         _settings = new AppSettings();
