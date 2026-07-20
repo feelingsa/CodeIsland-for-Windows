@@ -110,8 +110,10 @@ public sealed class SessionStateMachine
 
     private static bool ResolveExecutingTool(AgentEvent value, SessionSnapshot? current) => value.Type switch
     {
-        AgentEventType.ToolStart => true,
-        AgentEventType.Message or AgentEventType.ToolEnd or AgentEventType.SessionEnd or AgentEventType.Error => false,
+        AgentEventType.SessionStart or AgentEventType.ToolStart or AgentEventType.ToolEnd => true,
+        AgentEventType.Heartbeat when value.ToolName == "background" => true,
+        AgentEventType.Message or AgentEventType.SessionEnd or AgentEventType.Error
+            or AgentEventType.PermissionRequest or AgentEventType.Question => false,
         _ => current?.IsExecutingTool ?? false
     };
 

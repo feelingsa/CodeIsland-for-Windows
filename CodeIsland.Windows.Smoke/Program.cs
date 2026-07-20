@@ -376,7 +376,8 @@ Require(liveMessageEvent is { Type: AgentEventType.Message, Text: "Reading the p
 var reasoningEvent = CodexTranscriptParser.ParseLine(
     "{\"timestamp\":\"2026-07-20T08:00:04Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"agent_reasoning\",\"text\":\"hidden\"}}",
     mcpContext);
-Require(reasoningEvent is null, "Internal reasoning must not create a fabricated display status.");
+Require(reasoningEvent is { Type: AgentEventType.Heartbeat, Text: null, ToolName: "background" },
+    "Internal reasoning must drive background animation without creating display text.");
 var approvalEvent = CodexTranscriptParser.ParseLine(
     "{\"timestamp\":\"2026-07-20T08:00:05Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call\",\"call_id\":\"approval-1\",\"name\":\"shell_command\",\"input\":\"{\\\"sandbox_permissions\\\":\\\"require_escalated\\\",\\\"justification\\\":\\\"Allow this command?\\\"}\"}}",
     mcpContext);
@@ -409,6 +410,13 @@ liveStore.Apply(new AgentEvent("mcp-tool", "mcp-session", AgentKind.Codex,
 liveStore.Apply(liveMessageEvent!);
 Require(liveStore.Sessions.Single(value => value.SessionId == "mcp-session").IsExecutingTool == false,
     "Fresh Codex output must stop the collapsed wave animation immediately.");
+liveStore.Apply(reasoningEvent!);
+Require(liveStore.Sessions.Single(value => value.SessionId == "mcp-session").IsExecutingTool,
+    "Background reasoning after output must restart the collapsed wave animation.");
+liveStore.Apply(new AgentEvent("mcp-tool-end", "mcp-session", AgentKind.Codex,
+    AgentEventType.ToolEnd, DateTimeOffset.UtcNow, ToolName: "plugin codegraph/status"));
+Require(liveStore.Sessions.Single(value => value.SessionId == "mcp-session").IsExecutingTool,
+    "Tool completion must keep waving while the agent continues background processing.");
 liveStore.Apply(new AgentEvent("live-end", "mcp-session", AgentKind.Codex,
     AgentEventType.SessionEnd, DateTimeOffset.UtcNow));
 var completedLiveSession = liveStore.Sessions.Single(value => value.SessionId == "mcp-session");
