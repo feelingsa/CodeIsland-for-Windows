@@ -114,6 +114,16 @@ public sealed class DesktopSessionStore : INotifyPropertyChanged
         return true;
     }
 
+    public bool MoveSessionBefore(string sessionId, string targetSessionId)
+    {
+        var sourceIndex = Sessions.ToList().FindIndex(value => value.SessionId == sessionId);
+        var targetIndex = Sessions.ToList().FindIndex(value => value.SessionId == targetSessionId);
+        if (sourceIndex < 0 || targetIndex < 0 || sourceIndex == targetIndex) return false;
+        Sessions.Move(sourceIndex, targetIndex);
+        OnPropertyChanged(nameof(CurrentSession));
+        return true;
+    }
+
     private void ReplaceVisible(SessionSnapshot snapshot)
     {
         var index = Sessions.ToList().FindIndex(value => value.SessionId == snapshot.SessionId);

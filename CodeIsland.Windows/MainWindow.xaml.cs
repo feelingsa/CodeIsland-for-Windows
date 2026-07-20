@@ -35,6 +35,7 @@ public partial class MainWindow : Window
     private readonly TerminalActivator _terminalActivator = new();
     private readonly WorkspaceLauncher _workspaceLauncher = new();
     private ICollectionView? _sessionView;
+    private System.Windows.Point _sessionDragStart;
     private string _filter = "all";
     private DockEdges _dockEdges = DockEdges.Top;
     public string HotKeyStatus => _hotKeys?.RegistrationSummary ?? "Shortcuts are not registered yet.";
@@ -150,6 +151,41 @@ public partial class MainWindow : Window
     private void OnJumpPillClick(object sender, MouseButtonEventArgs e)
     {
         if (sender is FrameworkElement { Tag: SessionSnapshot snapshot }) ActivateSession(snapshot);
+        e.Handled = true;
+    }
+
+    private void OnSessionDragStart(object sender, MouseButtonEventArgs e)
+    {
+        if (IsInteractiveElement(e.OriginalSource as DependencyObject)) return;
+        _sessionDragStart = e.GetPosition(this);
+        e.Handled = true;
+    }
+
+    private void OnSessionDragMove(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed || sender is not FrameworkElement { Tag: SessionSnapshot snapshot } card)
+            return;
+        var position = e.GetPosition(this);
+        if (Math.Abs(position.X - _sessionDragStart.X) < SystemParameters.MinimumHorizontalDragDistance
+            && Math.Abs(position.Y - _sessionDragStart.Y) < SystemParameters.MinimumVerticalDragDistance)
+            return;
+        System.Windows.DragDrop.DoDragDrop(card, snapshot.SessionId, System.Windows.DragDropEffects.Move);
+    }
+
+    private void OnSessionDragOver(object sender, System.Windows.DragEventArgs e)
+    {
+        e.Effects = e.Data.GetDataPresent(typeof(string))
+            ? System.Windows.DragDropEffects.Move
+            : System.Windows.DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void OnSessionDrop(object sender, System.Windows.DragEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: SessionSnapshot target }
+            && e.Data.GetData(typeof(string)) is string sourceSessionId
+            && _sessions.MoveSessionBefore(sourceSessionId, target.SessionId))
+            _sessionView?.Refresh();
         e.Handled = true;
     }
 

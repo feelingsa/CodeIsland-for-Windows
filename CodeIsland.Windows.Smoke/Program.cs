@@ -104,6 +104,18 @@ Require(bounded.RemoveSession("bounded-1"), "Visible session must support explic
 Require(bounded.SessionCount == 0, "Explicit removal must update the visible collection.");
 Console.WriteLine("SMOKE PASS: state recovery, bounded history, visible limit and expiry cleanup verified.");
 
+var prioritized = new DesktopSessionStore(maxVisibleSessions: 3);
+prioritized.Apply(new AgentEvent("priority-1", "priority-first", AgentKind.Codex,
+    AgentEventType.SessionStart, DateTimeOffset.UtcNow));
+prioritized.Apply(new AgentEvent("priority-2", "priority-second", AgentKind.Codex,
+    AgentEventType.SessionStart, DateTimeOffset.UtcNow));
+Require(prioritized.MoveSessionBefore("priority-first", "priority-second"),
+    "Visible sessions must support drag-order prioritization.");
+Require(prioritized.Sessions[0].SessionId == "priority-first"
+        && prioritized.CurrentSession?.SessionId == "priority-first",
+    "Dragged session must become the collapsed panel priority.");
+Console.WriteLine("SMOKE PASS: drag ordering updates collapsed-session priority.");
+
 Require(NotificationSoundManager.CueFor(AgentEventType.SessionStart) == NotificationCue.Start,
     "Session start must map to the start cue.");
 Require(NotificationSoundManager.CueFor(AgentEventType.PermissionRequest) == NotificationCue.Approval,
