@@ -68,7 +68,7 @@ public partial class App : Application
         {
             _sounds.Play(agentEvent);
             _logger.Info($"Event received: agent={agentEvent.Agent} type={agentEvent.Type} session={agentEvent.SessionId}");
-            if (RequiresPanelAttention(agentEvent))
+            if (PanelAttentionPolicy.RequiresExpansion(agentEvent))
                 Dispatcher.BeginInvoke(() =>
                 {
                     _window?.ExpandPanel();
@@ -118,12 +118,6 @@ public partial class App : Application
         if (e.Args.Contains("--settings", StringComparer.OrdinalIgnoreCase)) OpenSettings();
         base.OnStartup(e);
     }
-
-    private static bool RequiresPanelAttention(AgentEvent agentEvent) =>
-        agentEvent.Type is AgentEventType.PermissionRequest or AgentEventType.Question or AgentEventType.Error
-        || agentEvent.Type is AgentEventType.ToolStart or AgentEventType.ToolEnd
-            && (agentEvent.ToolName?.StartsWith("plugin ", StringComparison.OrdinalIgnoreCase) == true
-                || agentEvent.ToolName?.StartsWith("approval ", StringComparison.OrdinalIgnoreCase) == true);
 
     private void RepairOutdatedHooks()
     {

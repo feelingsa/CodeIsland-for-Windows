@@ -147,6 +147,22 @@ Require(NotificationSoundManager.CueFor(AgentEventType.Error) == NotificationCue
     "Error must map to the error cue.");
 Console.WriteLine("SMOKE PASS: notification sound event mapping verified.");
 
+var attentionBase = new AgentEvent("attention", "attention-session", AgentKind.Codex,
+    AgentEventType.ToolStart, DateTimeOffset.UtcNow);
+Require(PanelAttentionPolicy.RequiresExpansion(attentionBase with { ToolName = "approval terminal" }),
+    "Detected approval tools must expand the panel.");
+Require(PanelAttentionPolicy.RequiresExpansion(attentionBase with { Type = AgentEventType.PermissionRequest }),
+    "Structured permission requests must expand the panel.");
+Require(PanelAttentionPolicy.RequiresExpansion(attentionBase with { Type = AgentEventType.Question }),
+    "User questions must expand the panel.");
+Require(!PanelAttentionPolicy.RequiresExpansion(attentionBase with { ToolName = "plugin codegraph/status" }),
+    "Ordinary plugin calls must not expand the panel.");
+Require(!PanelAttentionPolicy.RequiresExpansion(attentionBase with { Type = AgentEventType.ToolEnd, ToolName = "approval terminal" }),
+    "Tool completion must not reopen the panel.");
+Require(!PanelAttentionPolicy.RequiresExpansion(attentionBase with { Type = AgentEventType.Error }),
+    "Non-interactive errors must not expand the panel.");
+Console.WriteLine("SMOKE PASS: only actionable approval and question events expand the panel.");
+
 var settingsRoot = Path.Combine(Path.GetTempPath(), $"codeisland-settings-{Guid.NewGuid():N}");
 try
 {
