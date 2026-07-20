@@ -16,6 +16,7 @@
         <local:AgentAccentConverter x:Key="AgentAccentConverter"/>
         <local:AgentGroupHeaderConverter x:Key="AgentGroupHeaderConverter"/>
         <local:AgentGifPathConverter x:Key="AgentGifPathConverter"/>
+        <local:AgentGifSizeConverter x:Key="AgentGifSizeConverter"/>
         <Style x:Key="IconButton" TargetType="Button">
             <Setter Property="Width" Value="40"/><Setter Property="Height" Value="40"/>
             <Setter Property="Padding" Value="0"/><Setter Property="Margin" Value="2,0"/>
@@ -86,8 +87,8 @@
                             <ItemsControl.ItemTemplate><DataTemplate DataType="{x:Type core:SessionSnapshot}">
                                 <Border Background="#FF0D0D0E" CornerRadius="14" Margin="0,0,0,9" Padding="14,12">
                                     <Grid>
-                                        <Grid.ColumnDefinitions><ColumnDefinition Width="142"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                                        <local:AnimatedGifImage Grid.Column="0" Width="128" Height="128" HorizontalAlignment="Left" VerticalAlignment="Center"
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                        <local:AnimatedGifImage Grid.Column="0" Width="{Binding Agent, Mode=OneWay, Converter={StaticResource AgentGifSizeConverter}}" Height="{Binding Agent, Mode=OneWay, Converter={StaticResource AgentGifSizeConverter}}" Margin="4,0,12,0" HorizontalAlignment="Left" VerticalAlignment="Center"
                                             RenderOptions.BitmapScalingMode="NearestNeighbor" SourcePath="{Binding Agent, Mode=OneWay, Converter={StaticResource AgentGifPathConverter}}"/>
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="4,0,14,0">
                                             <TextBlock FontSize="18" FontWeight="Bold" TextTrimming="CharacterEllipsis">
@@ -116,14 +117,14 @@
                 </Grid>
             </Grid>
 
-            <Grid x:Name="CollapsedPanel" Visibility="Collapsed" Margin="10">
-                <Grid.ColumnDefinitions><ColumnDefinition Width="132"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                <local:AnimatedGifImage Width="128" Height="128" HorizontalAlignment="Left" VerticalAlignment="Center"
+            <Grid x:Name="CollapsedPanel" Visibility="Collapsed" Margin="10,6">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="44"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <local:AnimatedGifImage Width="32" Height="32" HorizontalAlignment="Center" VerticalAlignment="Center"
                     RenderOptions.BitmapScalingMode="NearestNeighbor" SourcePath="{Binding CurrentSession.Agent, Mode=OneWay, Converter={StaticResource AgentGifPathConverter}}"/>
-                <Border Grid.Column="1" Margin="10,14,12,14" BorderBrush="#FF123D21" BorderThickness="0,0,0,1" VerticalAlignment="Center" Padding="0,0,0,8">
+                <Border Grid.Column="1" Margin="5,0,10,0" BorderBrush="#FF123D21" BorderThickness="0,0,0,1" VerticalAlignment="Center" Padding="0,0,0,5">
                     <TextBlock Text="{Binding CurrentSession, Mode=OneWay, Converter={StaticResource SessionStatusTextConverter}}"
-                        Foreground="#FF39E46E" FontFamily="Cascadia Mono, Consolas" FontWeight="Bold" FontSize="18"
-                        TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" MaxHeight="28"/>
+                        Foreground="#FF39E46E" FontFamily="Cascadia Mono, Consolas" FontWeight="Bold" FontSize="15"
+                        TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" MaxHeight="23"/>
                 </Border>
             </Grid>
         </Grid>

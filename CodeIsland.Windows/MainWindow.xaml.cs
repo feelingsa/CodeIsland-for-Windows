@@ -25,8 +25,8 @@ public partial class MainWindow : Window
 {
     private bool _expanded = true;
     private const double ExpandedWidth = 780;
-    private const double CollapsedWidth = 460;
-    private const double CollapsedHeight = 152;
+    private const double CollapsedWidth = 400;
+    private const double CollapsedHeight = 64;
     private readonly DesktopSessionStore _sessions;
     private readonly Dictionary<string, string> _answerDrafts = new(StringComparer.Ordinal);
     private GlobalHotKeyManager? _hotKeys;
@@ -36,6 +36,7 @@ public partial class MainWindow : Window
     private readonly WorkspaceLauncher _workspaceLauncher = new();
     private ICollectionView? _sessionView;
     private string _filter = "all";
+    private DockEdges _dockEdges = DockEdges.Top;
     public string HotKeyStatus => _hotKeys?.RegistrationSummary ?? "Shortcuts are not registered yet.";
     public IntPtr NativeHandle => new WindowInteropHelper(this).Handle;
 
@@ -72,7 +73,7 @@ public partial class MainWindow : Window
             _sessions.PropertyChanged -= OnSessionsChanged;
         };
         StateChanged += (_, _) => { if (WindowState == WindowState.Minimized) Hide(); };
-        MouseLeftButtonDown += (_, _) => DragMove();
+        MouseLeftButtonDown += OnPanelMouseDown;
         MouseDoubleClick += (_, _) => TogglePanel();
     }
 
@@ -178,11 +179,63 @@ public partial class MainWindow : Window
 
     private void PositionPanel()
     {
+        if (_dockEdges != DockEdges.None)
+        {
+            ApplyDockPlacement(_dockEdges);
+            return;
+        }
         var area = DisplayPositioner.SelectWorkingArea(_settings.DisplayMode);
         var transform = PresentationSource.FromVisual(this)?.CompositionTarget?.TransformToDevice;
         var position = DisplayPositioner.TopCenter(area, transform?.M11 ?? 1, transform?.M22 ?? 1, Width);
         Left = position.Left;
         Top = position.Top;
+    }
+
+    private void OnPanelMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount > 1 || IsInteractiveElement(e.OriginalSource as DependencyObject)) return;
+        try
+        {
+            DragMove();
+            var placement = PanelDocking.Resolve(GetWorkingArea(),
+                new System.Windows.Size(ActualWidth, ActualHeight), new System.Windows.Point(Left, Top), radius: _expanded ? 24 : 18);
+            _dockEdges = placement.Edges;
+            ApplyPlacement(placement);
+        }
+        catch (InvalidOperationException) { }
+    }
+
+    private static bool IsInteractiveElement(DependencyObject? element)
+    {
+        while (element is not null)
+        {
+            if (element is WpfButton or WpfTextBox) return true;
+            element = VisualTreeHelper.GetParent(element);
+        }
+        return false;
+    }
+
+    private Rect GetWorkingArea()
+    {
+        var area = DisplayPositioner.SelectWorkingArea(_settings.DisplayMode);
+        var transform = PresentationSource.FromVisual(this)?.CompositionTarget?.TransformToDevice;
+        var scaleX = transform?.M11 ?? 1;
+        var scaleY = transform?.M22 ?? 1;
+        return new Rect(area.Left / scaleX, area.Top / scaleY, area.Width / scaleX, area.Height / scaleY);
+    }
+
+    private void ApplyDockPlacement(DockEdges edges)
+    {
+        var placement = PanelDocking.Place(GetWorkingArea(), new System.Windows.Size(ActualWidth, ActualHeight),
+            new System.Windows.Point(Left, Top), edges, _expanded ? 24 : 18);
+        ApplyPlacement(placement);
+    }
+
+    private void ApplyPlacement(PanelDockPlacement placement)
+    {
+        Left = placement.Left;
+        Top = placement.Top;
+        PanelBorder.CornerRadius = placement.Corners;
     }
 
     public void TogglePanel()
