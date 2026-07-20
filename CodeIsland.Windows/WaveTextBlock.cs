@@ -66,13 +66,20 @@ public sealed class WaveTextBlock : FrameworkElement
         while (elements.MoveNext()) parts.Add(elements.GetTextElement());
 
         var x = 0d;
-        var active = parts.Count == 0 ? -1 : _phase % (parts.Count + 3);
+        var crest = parts.Count == 0 ? -1 : _phase % (parts.Count + 3);
         for (var index = 0; index < parts.Count; index++)
         {
             var formatted = new FormattedText(parts[index], CultureInfo.CurrentUICulture,
                 System.Windows.FlowDirection.LeftToRight, typeface, 14, brush, pixelsPerDip);
             if (x + formatted.WidthIncludingTrailingWhitespace > ActualWidth) break;
-            var lift = IsAnimating && index == active ? 4d : 0d;
+            var wavePosition = index - (crest - 2);
+            var lift = IsAnimating ? wavePosition switch
+            {
+                0 => 1.5d,
+                1 => 2.75d,
+                2 => 4d,
+                _ => 0d
+            } : 0d;
             drawingContext.DrawText(formatted, new System.Windows.Point(x, 3 - lift));
             x += formatted.WidthIncludingTrailingWhitespace;
         }
