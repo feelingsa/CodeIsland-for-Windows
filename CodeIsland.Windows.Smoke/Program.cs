@@ -179,6 +179,13 @@ Console.WriteLine("SMOKE PASS: Buddy agent, pairing, brightness and uplink frame
 var diagnosticsRoot = Path.Combine(Path.GetTempPath(), $"codeisland-diagnostics-{Guid.NewGuid():N}");
 try
 {
+    var blockedLogRoot = Path.Combine(diagnosticsRoot, "blocked-log-root");
+    Directory.CreateDirectory(diagnosticsRoot);
+    File.WriteAllText(blockedLogRoot, "not a directory");
+    var fallbackLogger = new AppLogger(blockedLogRoot);
+    fallbackLogger.Info("fallback logger must not fail application startup");
+    Require(!string.Equals(fallbackLogger.LogDirectory, blockedLogRoot, StringComparison.OrdinalIgnoreCase),
+        "Logger must fall back when the configured log directory is unavailable.");
     var logRoot = Path.Combine(diagnosticsRoot, "logs");
     var logger = new AppLogger(logRoot, maxBytes: 80);
     logger.Info("Bearer abcdefghijklmnop sk-abcdefghijklmnop "

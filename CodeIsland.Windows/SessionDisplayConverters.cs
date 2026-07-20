@@ -75,13 +75,26 @@ public sealed class SessionStatusTextConverter : IValueConverter
 
 public sealed class AgentAccentConverter : IValueConverter
 {
-    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) => value switch
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is CollectionViewGroup group) value = group.Name;
+        return value switch
     {
         AgentKind.Claude => new SolidColorBrush(System.Windows.Media.Color.FromRgb(235, 126, 77)),
         AgentKind.Codex => new SolidColorBrush(System.Windows.Media.Color.FromRgb(133, 112, 255)),
         AgentKind.Gemini => new SolidColorBrush(System.Windows.Media.Color.FromRgb(168, 107, 238)),
         _ => new SolidColorBrush(System.Windows.Media.Color.FromRgb(55, 208, 103))
     };
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
+public sealed class AgentGroupHeaderConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is CollectionViewGroup group ? $"{group.Name} ({group.ItemCount})" : "Sessions";
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
         throw new NotSupportedException();

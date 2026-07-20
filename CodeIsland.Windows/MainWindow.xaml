@@ -13,6 +13,7 @@
         <local:SessionStateBrushConverter x:Key="SessionStateBrushConverter"/>
         <local:SessionStatusTextConverter x:Key="SessionStatusTextConverter"/>
         <local:AgentAccentConverter x:Key="AgentAccentConverter"/>
+        <local:AgentGroupHeaderConverter x:Key="AgentGroupHeaderConverter"/>
         <local:AgentGifPathConverter x:Key="AgentGifPathConverter"/>
         <Style x:Key="IconButton" TargetType="Button">
             <Setter Property="Width" Value="34"/><Setter Property="Height" Value="34"/>
@@ -71,7 +72,7 @@
                     </Border>
                 </StackPanel>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Style="{StaticResource IconButton}" Content="◖" ToolTip="Sound"/>
+                    <Button x:Name="SoundButton" Style="{StaticResource IconButton}" Content="◖" ToolTip="Sound" Click="OnSoundClick"/>
                     <Button Style="{StaticResource IconButton}" Content="⚙" ToolTip="Settings" Click="OnSettingsClick"/>
                     <Button Style="{StaticResource IconButton}" Content="⏻" Foreground="#FFDA525A" ToolTip="Exit" Click="OnExitClick"/>
                 </StackPanel>
@@ -94,10 +95,8 @@
                             <GroupStyle>
                                 <GroupStyle.HeaderTemplate><DataTemplate>
                                     <StackPanel Orientation="Horizontal" Margin="8,11,0,8">
-                                        <TextBlock Text="✦" Foreground="{Binding Name, Converter={StaticResource AgentAccentConverter}}" FontSize="18" Margin="0,0,8,0"/>
-                                        <TextBlock Foreground="#FF97979D" FontWeight="Bold" FontSize="15">
-                                            <Run Text="{Binding Name}"/><Run Text=" ("/><Run Text="{Binding ItemCount}"/><Run Text=")"/>
-                                        </TextBlock>
+                                        <TextBlock Text="✦" Foreground="{Binding Path=., Mode=OneWay, Converter={StaticResource AgentAccentConverter}}" FontSize="18" Margin="0,0,8,0"/>
+                                        <TextBlock Text="{Binding Path=., Mode=OneWay, Converter={StaticResource AgentGroupHeaderConverter}}" Foreground="#FF97979D" FontWeight="Bold" FontSize="15"/>
                                     </StackPanel>
                                 </DataTemplate></GroupStyle.HeaderTemplate>
                             </GroupStyle>
@@ -112,14 +111,14 @@
                                         </Grid>
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="4,0,16,0">
                                             <TextBlock FontSize="18" FontWeight="Bold" TextTrimming="CharacterEllipsis">
-                                                <Run Text="{Binding Converter={StaticResource SessionTitleConverter}}" Foreground="{Binding State, Converter={StaticResource SessionStateBrushConverter}}"/>
+                                                <Run Text="{Binding Path=., Mode=OneWay, Converter={StaticResource SessionTitleConverter}}" Foreground="{Binding State, Mode=OneWay, Converter={StaticResource SessionStateBrushConverter}}"/>
                                                 <Run Text="  #" Foreground="#FF5F5F65"/><Run Text="{Binding SessionId, Mode=OneWay}" Foreground="#FF5F5F65" FontSize="12"/>
                                             </TextBlock>
                                             <TextBlock Margin="0,8,0,0" TextTrimming="CharacterEllipsis" Foreground="#FFE0E0E3" FontSize="14">
-                                                <Run Text="> " Foreground="#FF37D067" FontWeight="Bold"/><Run Text="{Binding LastMessage, TargetNullValue=working...}"/>
+                                                <Run Text="> " Foreground="#FF37D067" FontWeight="Bold"/><Run Text="{Binding LastMessage, Mode=OneWay, TargetNullValue=working...}"/>
                                             </TextBlock>
                                             <TextBlock Margin="0,5,0,0" TextTrimming="CharacterEllipsis" Foreground="#FF99999F" FontSize="14">
-                                                <Run Text="$ " Foreground="#FFF27E4A" FontWeight="Bold"/><Run Text="{Binding Converter={StaticResource SessionStatusTextConverter}}"/>
+                                                <Run Text="$ " Foreground="#FFF27E4A" FontWeight="Bold"/><Run Text="{Binding Path=., Mode=OneWay, Converter={StaticResource SessionStatusTextConverter}}"/>
                                             </TextBlock>
                                             <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                                                 <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/>
@@ -139,7 +138,7 @@
                                         </StackPanel>
                                         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Top">
                                             <Border Style="{StaticResource Pill}"><TextBlock Text="{Binding StartedAt, Converter={StaticResource SessionElapsedConverter}}" Foreground="#FFB5B5BA" FontWeight="Bold"/></Border>
-                                            <Border Style="{StaticResource Pill}" Background="#FF0B2012" Cursor="Hand" MouseLeftButtonUp="OnJumpPillClick" Tag="{Binding}">
+                                            <Border Style="{StaticResource Pill}" Background="#FF0B2012" Cursor="Hand" MouseLeftButtonUp="OnJumpPillClick" Tag="{Binding Path=., Mode=OneWay}">
                                                 <StackPanel Orientation="Horizontal"><TextBlock Text="▣" Foreground="#FF37D067" Margin="0,0,7,0"/>
                                                     <TextBlock Text="{Binding TerminalKind, TargetNullValue=Terminal}" Foreground="#FF37D067" FontWeight="Bold"/>
                                                     <TextBlock Text="  →" Foreground="#FF258A48"/></StackPanel>

@@ -15,7 +15,11 @@ namespace CodeIsland.Windows;
 
 public partial class App : Application
 {
+    private const string InstanceMutexName = "CodeIsland.Windows.SingleInstance.v4";
+    private const string ShowPanelEventName = "CodeIsland.Windows.ShowPanel.v4";
     private Mutex? _instanceMutex;
+    private EventWaitHandle? _showPanelEvent;
+    private RegisteredWaitHandle? _showPanelRegistration;
     private NotifyIcon? _tray;
     private MainWindow? _window;
     private PipeServer? _pipeServer;
@@ -24,6 +28,7 @@ public partial class App : Application
     private DispatcherTimer? _cleanupTimer;
     private DispatcherTimer? _fullscreenTimer;
     private bool _fullscreenSuppressed;
+    private DateTimeOffset _manualShowUntil;
     private CodexSessionTailer? _codexTailer;
     private readonly NotificationSoundManager _sounds = new();
     private readonly SettingsStore _settingsStore = new();
@@ -34,12 +39,22 @@ public partial class App : Application
 
     protected override void OnStartup(StartupEventArgs e)
     {
-        _instanceMutex = new Mutex(true, "CodeIsland.Windows.SingleInstance", out var created);
+        _instanceMutex = new Mutex(true, InstanceMutexName, out var created);
         if (!created)
         {
+            try
+            {
+                using var showPanel = EventWaitHandle.OpenExisting(ShowPanelEventName);
+                showPanel.Set();
+            }
+            catch (Exception ex) when (ex is WaitHandleCannotBeOpenedException or UnauthorizedAccessException) { }
             Shutdown(2);
             return;
         }
+
+        _showPanelEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowPanelEventName);
+        _showPanelRegistration = ThreadPool.RegisterWaitForSingleObject(_showPanelEvent, (_, _) =>
+            Dispatcher.BeginInvoke(ShowPanel), null, Timeout.Infinite, false);
 
         _settings = _settingsStore.Load();
         _logger.Info("Application startup.");
@@ -57,7 +72,16 @@ public partial class App : Application
         _codexTailer.EventReceived += (_, agentEvent) => Dispatcher.Invoke(() => Sessions.Apply(agentEvent));
         _codexTailer.Start();
         _window = new MainWindow(Sessions, _settings);
-        _window.Show();
+        try
+        {
+            _window.Show();
+        }
+        catch (Exception ex)
+        {
+            _logger.Error("Main window startup failed", ex);
+            Shutdown(3);
+            return;
+        }
         _fullscreenTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
         _fullscreenTimer.Tick += (_, _) => UpdateFullscreenVisibility();
         _fullscreenTimer.Start();
@@ -138,6 +162,14 @@ public partial class App : Application
         _settingsWindow.Show();
     }
 
+    internal bool ToggleSound()
+    {
+        _settings = _settings with { SoundEnabled = !_settings.SoundEnabled };
+        _settingsStore.Save(_settings);
+        _sounds.Enabled = _settings.SoundEnabled;
+        return _settings.SoundEnabled;
+    }
+
     private void ApplySettings(AppSettings settings)
     {
         _settings = settings;
@@ -154,6 +186,7 @@ public partial class App : Application
     private void UpdateFullscreenVisibility()
     {
         if (_window is null || !_settings.HideInFullscreen) return;
+        if (DateTimeOffset.UtcNow < _manualShowUntil) return;
         var fullscreen = FullscreenDetector.IsFullscreenForeground(_window.NativeHandle);
         if (fullscreen && _window.IsVisible)
         {
@@ -193,7 +226,10 @@ public partial class App : Application
     private void ShowPanel()
     {
         if (_window is null) return;
+        _manualShowUntil = DateTimeOffset.UtcNow.AddSeconds(5);
+        _fullscreenSuppressed = false;
         _window.Show();
+        if (_window.WindowState == WindowState.Minimized) _window.WindowState = WindowState.Normal;
         _window.Activate();
     }
 
@@ -212,6 +248,8 @@ public partial class App : Application
         _pipeServer?.DisposeAsync().AsTask().GetAwaiter().GetResult();
         _pipeStop?.Dispose();
         _tray?.Dispose();
+        _showPanelRegistration?.Unregister(null);
+        _showPanelEvent?.Dispose();
         _instanceMutex?.Dispose();
         base.OnExit(e);
     }

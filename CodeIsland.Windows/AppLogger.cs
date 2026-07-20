@@ -6,7 +6,7 @@ namespace CodeIsland.Windows;
 public sealed class AppLogger
 {
     private readonly object _gate = new();
-    private readonly string _filePath;
+    private string _filePath;
     private readonly long _maxBytes;
     public string LogDirectory => Path.GetDirectoryName(_filePath)!;
 
@@ -14,8 +14,7 @@ public sealed class AppLogger
     {
         rootDirectory ??= Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "CodeIsland", "logs");
-        Directory.CreateDirectory(rootDirectory);
-        _filePath = Path.Combine(rootDirectory, "codeisland.log");
+        _filePath = CreateLogPath(rootDirectory);
         _maxBytes = maxBytes;
     }
 
@@ -27,9 +26,33 @@ public sealed class AppLogger
     {
         lock (_gate)
         {
-            RotateIfNeeded();
-            File.AppendAllText(_filePath,
-                $"{DateTimeOffset.UtcNow:O} [{level}] {SensitiveDataRedactor.Redact(message)}{Environment.NewLine}");
+            var line = $"{DateTimeOffset.UtcNow:O} [{level}] {SensitiveDataRedactor.Redact(message)}{Environment.NewLine}";
+            try
+            {
+                RotateIfNeeded();
+                File.AppendAllText(_filePath, line);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                _filePath = CreateLogPath(Path.Combine(Path.GetTempPath(), "CodeIsland", "logs"));
+                try { File.AppendAllText(_filePath, line); }
+                catch (Exception fallbackError) when (fallbackError is IOException or UnauthorizedAccessException) { }
+            }
+        }
+    }
+
+    private static string CreateLogPath(string directory)
+    {
+        try
+        {
+            Directory.CreateDirectory(directory);
+            return Path.Combine(directory, "codeisland.log");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            var fallback = Path.Combine(Path.GetTempPath(), "CodeIsland", "logs");
+            Directory.CreateDirectory(fallback);
+            return Path.Combine(fallback, "codeisland.log");
         }
     }
 

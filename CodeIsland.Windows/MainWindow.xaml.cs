@@ -45,6 +45,8 @@ public partial class MainWindow : Window
         InitializeComponent();
         _sessions = sessions;
         _settings = settings;
+        SoundButton.Content = settings.SoundEnabled ? "◖" : "×";
+        SoundButton.ToolTip = settings.SoundEnabled ? "Mute notifications" : "Enable notification sounds";
         _sessions.EventApplied += OnEventApplied;
         _sessions.PropertyChanged += OnSessionsChanged;
         DataContext = sessions;
@@ -76,6 +78,8 @@ public partial class MainWindow : Window
     public void ApplySettings(AppSettings settings)
     {
         _settings = settings;
+        SoundButton.Content = settings.SoundEnabled ? "◖" : "×";
+        SoundButton.ToolTip = settings.SoundEnabled ? "Mute notifications" : "Enable notification sounds";
         PositionPanel();
         if (_source is not null) RegisterHotKeys();
     }
@@ -161,6 +165,13 @@ public partial class MainWindow : Window
 
     private void OnSettingsClick(object sender, RoutedEventArgs e) =>
         ((App)System.Windows.Application.Current).OpenSettings();
+
+    private void OnSoundClick(object sender, RoutedEventArgs e)
+    {
+        var enabled = ((App)System.Windows.Application.Current).ToggleSound();
+        SoundButton.Content = enabled ? "◖" : "×";
+        SoundButton.ToolTip = enabled ? "Mute notifications" : "Enable notification sounds";
+    }
 
     private void OnExitClick(object sender, RoutedEventArgs e) => System.Windows.Application.Current.Shutdown();
 
