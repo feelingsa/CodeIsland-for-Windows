@@ -35,10 +35,10 @@ public static class CodexTranscriptParser
         {
             return payloadType switch
             {
-                "task_started" => Create(context, Id(payload, timestamp), AgentEventType.SessionStart, timestamp,
-                    text: "Codex task started"),
-                "agent_reasoning" => Create(context, Id(payload, timestamp), AgentEventType.Message, timestamp,
-                    text: "Codex is reasoning"),
+                "task_started" => Create(context, Id(payload, timestamp), AgentEventType.SessionStart, timestamp),
+                "agent_message" => Create(context, Id(payload, timestamp), AgentEventType.Message, timestamp,
+                    text: Truncate(String(payload, "message"))),
+                "agent_reasoning" => null,
                 "patch_apply_begin" => Create(context, Id(payload, timestamp), AgentEventType.ToolStart, timestamp,
                     tool: "apply_patch"),
                 "patch_apply_end" => Create(context, Id(payload, timestamp), AgentEventType.ToolEnd, timestamp,
@@ -46,11 +46,10 @@ public static class CodexTranscriptParser
                 "mcp_tool_call_begin" => Create(context, Id(payload, timestamp), AgentEventType.ToolStart, timestamp,
                     tool: McpTool(payload)),
                 "mcp_tool_call_end" => Create(context, Id(payload, timestamp), AgentEventType.ToolEnd, timestamp,
-                    text: $"{McpTool(payload)} completed", tool: McpTool(payload)),
-                "task_complete" or "turn_complete" => Create(context, Id(payload, timestamp), AgentEventType.SessionEnd, timestamp,
-                    text: "Codex task completed"),
+                    tool: McpTool(payload)),
+                "task_complete" or "turn_complete" => Create(context, Id(payload, timestamp), AgentEventType.SessionEnd, timestamp),
                 "turn_aborted" or "error" => Create(context, Id(payload, timestamp), AgentEventType.Error, timestamp,
-                    text: String(payload, "message") ?? "Codex task failed"),
+                    text: String(payload, "message")),
                 _ => null
             };
         }
@@ -58,11 +57,11 @@ public static class CodexTranscriptParser
         return payloadType switch
         {
             "custom_tool_call" or "function_call" => Create(context, Id(payload, timestamp), AgentEventType.ToolStart,
-                timestamp, tool: NestedMcpTool(payload) ?? String(payload, "name") ?? "tool"),
+                timestamp, tool: ToolName(payload)),
             "custom_tool_call_output" or "function_call_output" => Create(context, Id(payload, timestamp), AgentEventType.ToolEnd,
                 timestamp, tool: "tool"),
             "message" when String(payload, "role") == "assistant" => Create(context, Id(payload, timestamp),
-                AgentEventType.Message, timestamp, text: AssistantText(payload) ?? "Codex replied"),
+                AgentEventType.Message, timestamp, text: AssistantText(payload)),
             _ => null
         };
     }
@@ -81,10 +80,27 @@ public static class CodexTranscriptParser
         foreach (var item in content.EnumerateArray())
         {
             var text = String(item, "text");
-            if (!string.IsNullOrWhiteSpace(text)) return text.Length <= 240 ? text : text[..240] + "...";
+            if (!string.IsNullOrWhiteSpace(text)) return Truncate(text);
         }
         return null;
     }
+
+    private static string ToolName(JsonElement payload)
+    {
+        var input = String(payload, "input", "arguments");
+        var name = String(payload, "name") ?? "tool";
+        if (name.Equals("request_user_input", StringComparison.OrdinalIgnoreCase)) return "approval user input";
+        if (!string.IsNullOrWhiteSpace(input)
+            && (input.Contains("require_escalated", StringComparison.OrdinalIgnoreCase)
+                || input.Contains("sandbox_permissions", StringComparison.OrdinalIgnoreCase)
+                    && input.Contains("justification", StringComparison.OrdinalIgnoreCase)))
+            return "approval terminal";
+        return NestedMcpTool(payload) ?? name;
+    }
+
+    private static string? Truncate(string? text) => string.IsNullOrWhiteSpace(text)
+        ? null
+        : text.Length <= 240 ? text : text[..240] + "...";
 
     private static string McpTool(JsonElement payload)
     {

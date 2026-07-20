@@ -21,7 +21,7 @@ This is a Windows adaptation of the original macOS [CodeIsland](https://github.c
 - **Windows-native UI** — WPF desktop application with a frameless, always-on-top panel and system tray integration
 - **Expanded and collapsed modes** — Double-click the panel to switch between the full session list and a compact pixel status strip
 - **Live session tracking** — Displays session state, recent messages, active tools, elapsed time, and working context
-- **Permission management** — Approve, deny, or always allow supported requests directly from the panel
+- **Permission management** — Approve, deny, or always allow Bridge-backed requests in the panel; Codex Desktop approvals automatically expand the panel and remain actionable in Codex
 - **Question answering** — Reply to agent questions without leaving the current application
 - **Codex Desktop integration** — Opens the exact Codex conversation through its thread deep link
 - **Codex transcript recovery** — Recovers active Codex sessions and follows live JSONL updates, including MCP/plugin calls

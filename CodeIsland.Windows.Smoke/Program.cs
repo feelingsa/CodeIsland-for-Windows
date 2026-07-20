@@ -107,9 +107,9 @@ Console.WriteLine("SMOKE PASS: state recovery, bounded history, visible limit an
 
 var resumed = new DesktopSessionStore();
 resumed.Apply(new AgentEvent("resume-start", "resume-session", AgentKind.Codex,
-    AgentEventType.SessionStart, DateTimeOffset.UtcNow, Text: "Codex task started"));
+    AgentEventType.SessionStart, DateTimeOffset.UtcNow));
 resumed.Apply(new AgentEvent("resume-error", "resume-session", AgentKind.Codex,
-    AgentEventType.Error, DateTimeOffset.UtcNow, Text: "Codex task failed"));
+    AgentEventType.Error, DateTimeOffset.UtcNow, Text: "Command interrupted"));
 resumed.Apply(new AgentEvent("resume-message", "resume-session", AgentKind.Codex,
     AgentEventType.Message, DateTimeOffset.UtcNow, Text: "Continuing with live output"));
 var resumedSession = resumed.CurrentSession ?? throw new InvalidOperationException("Resumed session is missing.");
@@ -355,19 +355,53 @@ var mcpEvent = CodexTranscriptParser.ParseLine(
     "{\"timestamp\":\"2026-07-20T08:00:01Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"mcp_tool_call_end\",\"call_id\":\"mcp-1\",\"invocation\":{\"server\":\"node_repl\",\"tool\":\"js\"}}}",
     mcpContext);
 Require(mcpEvent is { Type: AgentEventType.ToolEnd, ToolName: "plugin node_repl/js" }
-        && mcpEvent.Text == "plugin node_repl/js completed",
+        && mcpEvent.Text is null,
     "Codex MCP/plugin calls must be parsed with their server and tool names.");
 var mcpStore = new DesktopSessionStore();
 mcpStore.Apply(mcpEvent!);
-Require(mcpStore.CurrentSession?.LastMessage == "plugin node_repl/js completed",
-    "Completed plugin calls must remain visible in the session status.");
-Console.WriteLine("SMOKE PASS: Codex MCP/plugin call parsing and visible completion status verified.");
+Require(mcpStore.CurrentSession?.LastMessage is null,
+    "Completed plugin calls must not fabricate a completion message.");
+Console.WriteLine("SMOKE PASS: Codex MCP/plugin parsing does not fabricate output.");
 var nestedMcpEvent = CodexTranscriptParser.ParseLine(
     "{\"timestamp\":\"2026-07-20T08:00:02Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call\",\"call_id\":\"outer-1\",\"name\":\"exec\",\"input\":\"const r = await tools.mcp__codegraph__codegraph_status({projectPath: \\\"E:\\\\\\\\Demo\\\"});\"}}",
     mcpContext);
 Require(nestedMcpEvent is { Type: AgentEventType.ToolStart, ToolName: "plugin codegraph/codegraph_status" },
     "Nested MCP calls must expose the plugin name before the invocation completes.");
 Console.WriteLine("SMOKE PASS: nested CodeGraph invocation is identified before completion.");
+var liveMessageEvent = CodexTranscriptParser.ParseLine(
+    "{\"timestamp\":\"2026-07-20T08:00:03Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"agent_message\",\"message\":\"Reading the project configuration now.\"}}",
+    mcpContext);
+Require(liveMessageEvent is { Type: AgentEventType.Message, Text: "Reading the project configuration now." },
+    "Codex agent messages must be exposed as live display content.");
+var reasoningEvent = CodexTranscriptParser.ParseLine(
+    "{\"timestamp\":\"2026-07-20T08:00:04Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"agent_reasoning\",\"text\":\"hidden\"}}",
+    mcpContext);
+Require(reasoningEvent is null, "Internal reasoning must not create a fabricated display status.");
+var approvalEvent = CodexTranscriptParser.ParseLine(
+    "{\"timestamp\":\"2026-07-20T08:00:05Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call\",\"call_id\":\"approval-1\",\"name\":\"shell_command\",\"input\":\"{\\\"sandbox_permissions\\\":\\\"require_escalated\\\",\\\"justification\\\":\\\"Allow this command?\\\"}\"}}",
+    mcpContext);
+Require(approvalEvent is { Type: AgentEventType.ToolStart, ToolName: "approval terminal" },
+    "Any terminal escalation request must be marked for automatic panel expansion.");
+var inputEvent = CodexTranscriptParser.ParseLine(
+    "{\"timestamp\":\"2026-07-20T08:00:06Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call\",\"call_id\":\"approval-2\",\"name\":\"request_user_input\",\"input\":\"{}\"}}",
+    mcpContext);
+Require(inputEvent is { Type: AgentEventType.ToolStart, ToolName: "approval user input" },
+    "Codex user-input requests must be marked for automatic panel expansion.");
+var liveStore = new DesktopSessionStore();
+liveStore.Apply(new AgentEvent("old-message", "live-session", AgentKind.Codex,
+    AgentEventType.Message, DateTimeOffset.UtcNow, Text: "Previous output"));
+liveStore.Apply(new AgentEvent("new-tool", "live-session", AgentKind.Codex,
+    AgentEventType.ToolStart, DateTimeOffset.UtcNow, ToolName: "shell_command"));
+Require(liveStore.CurrentSession is { LastMessage: null, ActiveTool: "shell_command" },
+    "A new tool call must clear stale output until fresh Codex content arrives.");
+liveStore.Apply(liveMessageEvent!);
+liveStore.Apply(new AgentEvent("live-end", "mcp-session", AgentKind.Codex,
+    AgentEventType.SessionEnd, DateTimeOffset.UtcNow));
+var completedLiveSession = liveStore.Sessions.Single(value => value.SessionId == "mcp-session");
+Require((string)statusConverter.Convert(completedLiveSession, typeof(string), "collapsed",
+            System.Globalization.CultureInfo.InvariantCulture) == "Reading the project configuration now.",
+    "Collapsed completed sessions must retain the last real Codex message.");
+Console.WriteLine("SMOKE PASS: live Codex output and approval detection verified.");
 var transcriptRoot = Path.Combine(Path.GetTempPath(), $"codeisland-transcript-{Guid.NewGuid():N}");
 try
 {

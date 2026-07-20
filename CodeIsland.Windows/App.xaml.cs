@@ -122,7 +122,8 @@ public partial class App : Application
     private static bool RequiresPanelAttention(AgentEvent agentEvent) =>
         agentEvent.Type is AgentEventType.PermissionRequest or AgentEventType.Question or AgentEventType.Error
         || agentEvent.Type is AgentEventType.ToolStart or AgentEventType.ToolEnd
-            && agentEvent.ToolName?.StartsWith("plugin ", StringComparison.OrdinalIgnoreCase) == true;
+            && (agentEvent.ToolName?.StartsWith("plugin ", StringComparison.OrdinalIgnoreCase) == true
+                || agentEvent.ToolName?.StartsWith("approval ", StringComparison.OrdinalIgnoreCase) == true);
 
     private void RepairOutdatedHooks()
     {

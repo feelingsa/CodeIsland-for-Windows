@@ -66,9 +66,9 @@ public sealed class SessionStatusTextConverter : IValueConverter
             SessionSnapshot { Error: { Length: > 0 } error } => error,
             SessionSnapshot { State: SessionState.WaitingForPermission } => "waiting for approval_",
             SessionSnapshot { State: SessionState.WaitingForAnswer } => "waiting for answer_",
+            SessionSnapshot { LastMessage: { Length: > 0 } message } when collapsed => message,
             SessionSnapshot { State: SessionState.Completed } => "completed",
             SessionSnapshot { State: SessionState.Failed } => "failed_",
-            SessionSnapshot { LastMessage: { Length: > 0 } message } when collapsed => message,
             SessionSnapshot { ActiveTool: { Length: > 0 } tool } => $"running {tool}_",
             SessionSnapshot { LastMessage: { Length: > 0 } message } => message,
             _ => "thinking_"
