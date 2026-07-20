@@ -236,17 +236,18 @@ var topDock = PanelDocking.Resolve(workArea, new System.Windows.Size(780, 300),
     new System.Windows.Point(570, 7));
 Require(topDock.Edges == DockEdges.Top && topDock.Top == 0,
     "Panel near the top edge must snap flush to the screen.");
-Require(topDock.Corners.TopLeft == 0 && topDock.Corners.TopRight == 0
-        && topDock.Corners.BottomLeft > 0 && topDock.Corners.BottomRight > 0,
-    "Top-docked panel must remove only screen-facing corners.");
+Require(topDock.Corners.TopLeft > topDock.Corners.BottomLeft
+        && topDock.Corners.TopRight > topDock.Corners.BottomRight,
+    "Top-docked panel must use larger screen-facing shoulder curves.");
 var bottomRightDock = PanelDocking.Resolve(workArea, new System.Windows.Size(400, 64),
     new System.Windows.Point(1518, 1018));
 Require(bottomRightDock.Edges == (DockEdges.Right | DockEdges.Bottom)
         && bottomRightDock.Left == 1520 && bottomRightDock.Top == 1016,
     "Collapsed panel must snap exactly into a screen corner.");
-Require(bottomRightDock.Corners.TopLeft > 0 && bottomRightDock.Corners.TopRight == 0
-        && bottomRightDock.Corners.BottomLeft == 0 && bottomRightDock.Corners.BottomRight == 0,
-    "Corner-docked panel must keep only its inward corner rounded.");
+Require(bottomRightDock.Corners.TopLeft < bottomRightDock.Corners.TopRight
+        && bottomRightDock.Corners.TopLeft < bottomRightDock.Corners.BottomLeft
+        && bottomRightDock.Corners.BottomRight > bottomRightDock.Corners.TopLeft,
+    "Corner-docked panel must use continuous curves on both screen-facing sides.");
 Console.WriteLine("SMOKE PASS: four-edge snapping and seamless dock corner geometry verified.");
 var monitorBounds = new System.Drawing.Rectangle(0, 0, 1920, 1080);
 Require(FullscreenDetector.IsSameBounds(new System.Drawing.Rectangle(0, 0, 1920, 1080), monitorBounds),
