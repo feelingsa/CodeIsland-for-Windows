@@ -17,11 +17,12 @@ else if (mode == "send" && args.Length >= 2)
     var stdin = args.Contains("--stdin", StringComparer.OrdinalIgnoreCase);
     var source = GetOption(args, "--source");
     var eventName = GetOption(args, "--event");
+    var userSid = GetOption(args, "--user-sid");
     var file = stdin ? null : args.Skip(1).FirstOrDefault(value => !value.StartsWith("--", StringComparison.Ordinal));
     var input = stdin ? await Console.In.ReadToEndAsync() : await File.ReadAllTextAsync(file
         ?? throw new ArgumentException("send requires --stdin or an event JSON file."));
     var agentEvent = ParseEvent(input, source, eventName);
-    await using var client = new PipeClient();
+    await using var client = new PipeClient(userSid);
     await client.ConnectWithRetryAsync(3, TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(150));
     var response = await client.SendAsync(
         new PipeMessage(PipeMessageType.Event, Guid.NewGuid().ToString("N"), Event: agentEvent),
@@ -61,7 +62,7 @@ else if (mode == "self-test")
 }
 else
 {
-    Console.Error.WriteLine("Usage: codeisland-bridge [serve | send <event.json> | send --stdin --source codex --event SessionStart | self-test]");
+    Console.Error.WriteLine("Usage: codeisland-bridge [serve | send <event.json> | send --stdin [--source codex] [--event SessionStart] [--user-sid SID] | self-test]");
     return 2;
 }
 
