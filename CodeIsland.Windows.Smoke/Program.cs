@@ -405,6 +405,11 @@ var approvalEvent = CodexTranscriptParser.ParseLine(
     mcpContext);
 Require(approvalEvent is { Type: AgentEventType.ToolStart, ToolName: "approval terminal" },
     "Any terminal escalation request must be marked for automatic panel expansion.");
+var ordinaryTerminalEvent = CodexTranscriptParser.ParseLine(
+    "{\"timestamp\":\"2026-07-20T08:00:05Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call\",\"call_id\":\"ordinary-terminal\",\"name\":\"exec\",\"input\":\"const r = await tools.shell_command({\\\"command\\\":\\\"rg require_escalated sandbox_permissions justification .\\\",\\\"sandbox_permissions\\\":\\\"use_default\\\"});\"}}",
+    mcpContext);
+Require(ordinaryTerminalEvent is { Type: AgentEventType.ToolStart, ToolName: "exec" },
+    "Ordinary terminal commands mentioning approval terms must not trigger panel expansion.");
 var inputEvent = CodexTranscriptParser.ParseLine(
     "{\"timestamp\":\"2026-07-20T08:00:06Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call\",\"call_id\":\"approval-2\",\"name\":\"request_user_input\",\"input\":\"{}\"}}",
     mcpContext);

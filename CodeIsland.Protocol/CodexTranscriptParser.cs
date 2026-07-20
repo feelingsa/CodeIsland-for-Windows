@@ -104,9 +104,9 @@ public static class CodexTranscriptParser
         var name = String(payload, "name") ?? "tool";
         if (name.Equals("request_user_input", StringComparison.OrdinalIgnoreCase)) return "approval user input";
         if (!string.IsNullOrWhiteSpace(input)
-            && (input.Contains("require_escalated", StringComparison.OrdinalIgnoreCase)
-                || input.Contains("sandbox_permissions", StringComparison.OrdinalIgnoreCase)
-                    && input.Contains("justification", StringComparison.OrdinalIgnoreCase)))
+            && Regex.IsMatch(input,
+                @"[""']sandbox_permissions[""']\s*:\s*[""']require_escalated[""']",
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
             return "approval terminal";
         return NestedMcpTool(payload) ?? name;
     }

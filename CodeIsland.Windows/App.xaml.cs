@@ -67,7 +67,7 @@ public partial class App : Application
         Sessions.EventApplied += (_, agentEvent) =>
         {
             _sounds.Play(agentEvent);
-            _logger.Info($"Event received: agent={agentEvent.Agent} type={agentEvent.Type} session={agentEvent.SessionId}");
+            _logger.Info($"Event received: agent={agentEvent.Agent} type={agentEvent.Type} tool={agentEvent.ToolName ?? "-"} session={agentEvent.SessionId}");
             if (PanelAttentionPolicy.RequiresExpansion(agentEvent))
                 Dispatcher.BeginInvoke(() =>
                 {
