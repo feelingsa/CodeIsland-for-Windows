@@ -250,7 +250,7 @@ var shoulders = DockShoulderGeometry.Create(new System.Windows.Size(780, 160), D
 Require(!shoulders.First.Bounds.IsEmpty && !shoulders.Second.Bounds.IsEmpty
         && shoulders.First.Bounds.Left == 0 && shoulders.Second.Bounds.Right == 780,
     "Top docking must create curved shoulders at both screen connections.");
-var collapsedCenter = new System.Windows.Point(300 + 400d / 2, 0 + 64d / 2);
+var collapsedCenter = new System.Windows.Point(340 + 320d / 2, 0 + 56d / 2);
 var expandedFromCenter = PanelDocking.Place(workArea, new System.Windows.Size(780, 300),
     new System.Windows.Point(collapsedCenter.X - 780d / 2, collapsedCenter.Y - 300d / 2), DockEdges.Top);
 Require(Math.Abs((expandedFromCenter.Left + 780d / 2) - collapsedCenter.X) < .01,

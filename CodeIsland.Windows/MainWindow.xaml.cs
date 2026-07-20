@@ -25,8 +25,8 @@ public partial class MainWindow : Window
 {
     private bool _expanded = true;
     private const double ExpandedWidth = 780;
-    private const double CollapsedWidth = 400;
-    private const double CollapsedHeight = 64;
+    private const double CollapsedWidth = 320;
+    private const double CollapsedHeight = 56;
     private readonly DesktopSessionStore _sessions;
     private readonly Dictionary<string, string> _answerDrafts = new(StringComparer.Ordinal);
     private GlobalHotKeyManager? _hotKeys;
