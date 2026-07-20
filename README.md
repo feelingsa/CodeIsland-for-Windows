@@ -8,8 +8,6 @@ Real-time AI coding agent status panel for Windows, adapted from [wxtsky/CodeIsl
 
 ![CodeIsland for Windows expanded panel](docs/images/big.png)
 
-![CodeIsland for Windows collapsed panel](docs/images/small.png)
-
 ## What is CodeIsland for Windows?
 
 CodeIsland for Windows is a compact, always-on-top status panel for AI coding agents. It shows active sessions, tool calls, permission requests, questions, completion states, and errors without requiring you to keep switching back to a terminal or AI desktop app.

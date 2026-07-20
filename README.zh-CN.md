@@ -8,8 +8,6 @@
 
 ![CodeIsland for Windows 展开界面](docs/images/big.png)
 
-![CodeIsland for Windows 缩小界面](docs/images/small.png)
-
 ## CodeIsland for Windows 是什么？
 
 CodeIsland for Windows 是一款置顶显示的紧凑型 AI 编程智能体状态面板。它能够展示正在运行的会话、工具调用、权限申请、智能体提问、完成状态和错误信息，减少在终端、IDE 与 AI 桌面应用之间反复切换的操作。
