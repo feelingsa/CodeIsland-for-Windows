@@ -149,8 +149,8 @@ Console.WriteLine("SMOKE PASS: notification sound event mapping verified.");
 
 var attentionBase = new AgentEvent("attention", "attention-session", AgentKind.Codex,
     AgentEventType.ToolStart, DateTimeOffset.UtcNow);
-Require(PanelAttentionPolicy.RequiresExpansion(attentionBase with { ToolName = "approval terminal" }),
-    "Detected approval tools must expand the panel.");
+Require(!PanelAttentionPolicy.RequiresExpansion(attentionBase with { ToolName = "approval terminal" }),
+    "Read-only transcript approval hints without actionable buttons must not expand the panel.");
 Require(PanelAttentionPolicy.RequiresExpansion(attentionBase with { Type = AgentEventType.PermissionRequest }),
     "Structured permission requests must expand the panel.");
 Require(PanelAttentionPolicy.RequiresExpansion(attentionBase with { Type = AgentEventType.Question }),
