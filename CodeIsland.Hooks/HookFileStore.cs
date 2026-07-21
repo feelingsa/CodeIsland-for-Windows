@@ -20,6 +20,8 @@ public sealed class HookFileStore
         var original = File.Exists(configPath) ? File.ReadAllText(configPath) : "{}";
         var root = JsonNode.Parse(original)?.AsObject()
             ?? throw new JsonException($"Configuration root in '{configPath}' must be a JSON object.");
+        if (root["codeIsland"] is null
+            && original.Contains(registration.Id, StringComparison.Ordinal)) return string.Empty;
         var hooks = GetHooks(root, create: true)!;
         var desired = JsonSerializer.SerializeToNode(registration);
         if (JsonNode.DeepEquals(hooks[registration.Id], desired)) return string.Empty;

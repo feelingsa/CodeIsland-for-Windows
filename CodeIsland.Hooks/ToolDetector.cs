@@ -23,8 +23,9 @@ public sealed class ToolDetector
         var config = candidates.FirstOrDefault(File.Exists) ?? candidates.FirstOrDefault();
         var configExists = config is not null && File.Exists(config);
         var registration = configExists ? _store.Read(config!, tool.HookMarker) : null;
-        var markerPresent = registration is not null;
-        var currentVersion = registration?.ProtocolVersion == HookRegistration.CurrentProtocolVersion
+        var nativeHooksCurrent = configExists && HasCurrentNativeHooks(config!, tool);
+        var markerPresent = registration is not null || nativeHooksCurrent;
+        var currentVersion = nativeHooksCurrent || registration?.ProtocolVersion == HookRegistration.CurrentProtocolVersion
             && registration.InstallerVersion == HookRegistration.CurrentInstallerVersion
             && registration.Events.SequenceEqual(tool.Events);
         var problem = executable is null
@@ -38,6 +39,21 @@ public sealed class ToolDetector
     }
 
     public IReadOnlyList<ToolInstallation> DetectAll() => KnownTools.All.Select(Detect).ToArray();
+
+    private static bool HasCurrentNativeHooks(string configPath, HookTool tool)
+    {
+        try
+        {
+            var root = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(configPath));
+            return tool.Events.All(eventName =>
+                (root?["hooks"]?[eventName]?.ToJsonString() ?? string.Empty)
+                    .Contains(tool.HookMarker, StringComparison.Ordinal));
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return false;
+        }
+    }
 
     private string? FindExecutable(IEnumerable<string> names)
     {

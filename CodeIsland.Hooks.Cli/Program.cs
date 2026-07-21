@@ -34,16 +34,18 @@ if (command == "self-test")
         var manager = new HookManager(new ToolDetector(home, bin, store), store);
         Require(!manager.GetStatus(tool).HookInstalled, "Hook must initially be absent.");
         Require(manager.Install(tool, bridge).IsHealthy, "Install must produce a healthy status.");
-        var registration = store.Read(configPath, tool.HookMarker);
-        Require(registration?.Command.Contains(Path.GetFullPath(bridge), StringComparison.Ordinal) == true,
+        var registration = HookRegistration.Create(tool, bridge);
+        Require(registration.Command.Contains(Path.GetFullPath(bridge), StringComparison.Ordinal),
             "Registration must invoke the selected Bridge executable.");
-        Require(registration?.Events.SequenceEqual(tool.Events) == true, "Registration must contain all tool events.");
+        Require(registration.Events.SequenceEqual(tool.Events), "Registration must contain all tool events.");
         Require(tool.Events.SequenceEqual(["SessionStart", "SessionEnd", "UserPromptSubmit", "PreToolUse",
                 "PostToolUse", "PermissionRequest", "Stop"]),
             "Codex must install the complete upstream-compatible hook event set.");
         Require(registration?.ProtocolVersion == HookRegistration.CurrentProtocolVersion,
             "Registration must contain the current protocol version.");
         var codexRoot = JsonNode.Parse(File.ReadAllText(configPath))!.AsObject();
+        Require(!codexRoot.ContainsKey("codeIsland"),
+            "Codex hooks must not contain unsupported root-level CodeIsland metadata.");
         var codexEntry = codexRoot["hooks"]?[tool.Events[0]]?[0]?.AsObject();
         Require(codexEntry is not null && !codexEntry.ContainsKey("matcher"),
             "Codex native hooks must use the matcher-free event-map format.");

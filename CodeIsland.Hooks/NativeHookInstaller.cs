@@ -31,6 +31,7 @@ public sealed class NativeHookInstaller
                 ? new JsonObject { ["matcher"] = "*", ["hooks"] = new JsonArray(commandHook) }
                 : new JsonObject { ["hooks"] = new JsonArray(commandHook) });
         }
+        if (tool.Agent == CodeIsland.Core.AgentKind.Codex) root.Remove("codeIsland");
         Save(configPath, root);
         return backup;
     }
