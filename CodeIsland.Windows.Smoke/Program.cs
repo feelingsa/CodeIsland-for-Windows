@@ -149,8 +149,8 @@ Console.WriteLine("SMOKE PASS: notification sound event mapping verified.");
 
 var attentionBase = new AgentEvent("attention", "attention-session", AgentKind.Codex,
     AgentEventType.ToolStart, DateTimeOffset.UtcNow);
-Require(!PanelAttentionPolicy.RequiresExpansion(attentionBase with { ToolName = "approval terminal" }),
-    "Read-only transcript approval hints without actionable buttons must not expand the panel.");
+Require(PanelAttentionPolicy.RequiresExpansion(attentionBase with { ToolName = "approval terminal" }),
+    "Transcript terminal approval requests must expand the panel.");
 Require(PanelAttentionPolicy.RequiresExpansion(attentionBase with { Type = AgentEventType.PermissionRequest }),
     "Structured permission requests must expand the panel.");
 Require(PanelAttentionPolicy.RequiresExpansion(attentionBase with { Type = AgentEventType.Question }),
@@ -405,8 +405,8 @@ var approvalEvent = CodexTranscriptParser.ParseLine(
     mcpContext);
 Require(approvalEvent is { Type: AgentEventType.ToolStart, ToolName: "approval terminal" },
     "Any terminal escalation request must be marked for automatic panel expansion.");
-Require(!PanelAttentionPolicy.RequiresExpansion(approvalEvent!),
-    "Read-only transcript terminal approval hints must not expand the panel.");
+Require(PanelAttentionPolicy.RequiresExpansion(approvalEvent!),
+    "Transcript terminal approval requests must expand the panel.");
 var ordinaryTerminalEvent = CodexTranscriptParser.ParseLine(
     "{\"timestamp\":\"2026-07-20T08:00:05Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call\",\"call_id\":\"ordinary-terminal\",\"name\":\"exec\",\"input\":\"const r = await tools.shell_command({\\\"command\\\":\\\"rg require_escalated sandbox_permissions justification .\\\",\\\"sandbox_permissions\\\":\\\"use_default\\\"});\"}}",
     mcpContext);
@@ -471,7 +471,9 @@ try
     File.WriteAllLines(transcript,
     [
         "{\"timestamp\":\"2026-07-17T08:00:00Z\",\"type\":\"session_meta\",\"payload\":{\"session_id\":\"live-session\",\"cwd\":\"E:\\\\Demo\\\\CodexStatus\"}}",
-        "{\"timestamp\":\"2026-07-17T08:00:01Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"task_started\"}}"
+        "{\"timestamp\":\"2026-07-17T08:00:01Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"task_started\"}}",
+        "{\"timestamp\":\"2026-07-17T08:00:02Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call\",\"call_id\":\"input-1\",\"name\":\"request_user_input\",\"input\":\"{}\"}}",
+        "{\"timestamp\":\"2026-07-17T08:00:03Z\",\"type\":\"event_msg\",\"payload\":{\"type\":\"agent_reasoning\"}}"
     ]);
     var transcriptEvents = new List<AgentEvent>();
     using var liveSignal = new ManualResetEventSlim();
@@ -487,6 +489,10 @@ try
     lock (transcriptEvents)
         Require(transcriptEvents.Any(value => value.SessionId == "live-session"),
             "Tailer startup must recover an existing active Codex session.");
+    lock (transcriptEvents)
+        Require(transcriptEvents.Any(value => value.SessionId == "live-session"
+            && value.Type == AgentEventType.Question),
+            "Tailer startup must recover a pending Codex user-input request.");
     File.AppendAllText(transcript, Environment.NewLine
         + "{\"timestamp\":\"2026-07-17T08:00:02Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call\",\"call_id\":\"call-1\",\"name\":\"shell\"}}"
         + Environment.NewLine);

@@ -57,16 +57,22 @@ public sealed class CodexSessionTailer : IDisposable
             var context = _contexts.GetOrAdd(path, _ => new CodexTranscriptContext());
             AgentEvent? sessionStart = null;
             AgentEvent? last = null;
+            AgentEvent? attention = null;
             using var stream = OpenShared(path);
             using var reader = new StreamReader(stream);
             while (reader.ReadLine() is { } line)
             {
                 var parsed = TryParse(line, context);
                 if (parsed?.Type == AgentEventType.SessionStart) sessionStart ??= parsed;
-                if (parsed is not null) last = parsed;
+                if (parsed is not null)
+                {
+                    last = parsed;
+                    if (PanelAttentionPolicy.RequiresExpansion(parsed)) attention = parsed;
+                }
             }
             _positions[path] = CompleteLength(stream);
             if (sessionStart is not null) EventReceived?.Invoke(this, sessionStart);
+            if (attention is not null && attention != last) EventReceived?.Invoke(this, attention);
             if (last is not null && last != sessionStart) EventReceived?.Invoke(this, last);
         }
     }
