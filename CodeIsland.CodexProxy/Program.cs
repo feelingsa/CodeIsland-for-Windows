@@ -17,7 +17,10 @@ var startInfo = new ProcessStartInfo(realCodex)
     RedirectStandardInput = true,
     RedirectStandardOutput = true,
     RedirectStandardError = true,
-    CreateNoWindow = true
+    CreateNoWindow = true,
+    StandardInputEncoding = new UTF8Encoding(false),
+    StandardOutputEncoding = new UTF8Encoding(false),
+    StandardErrorEncoding = new UTF8Encoding(false)
 };
 foreach (var argument in args) startInfo.ArgumentList.Add(argument);
 
