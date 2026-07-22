@@ -28,7 +28,7 @@ if (command == "self-test")
         File.WriteAllText(bridge, "bridge");
         var configPath = Path.Combine(home, tool.ConfigPaths[0]);
         Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
-        File.WriteAllText(configPath, "{\"model\":\"gpt-5\"}");
+        File.WriteAllText(configPath, "{\"model\":\"gpt-5\",\"hooks\":{\"PermissionRequest\":[{\"hooks\":[{\"type\":\"command\",\"command\":\"external-hook\"}]}]}}");
 
         var store = new HookFileStore(backups);
         var manager = new HookManager(new ToolDetector(home, bin, store), store);
@@ -56,6 +56,8 @@ if (command == "self-test")
                 && codexCommand.Contains($"--event {tool.Events[0]}", StringComparison.Ordinal),
             "Codex native hook command must provide source and event tags.");
         var permissionEntry = codexRoot["hooks"]?["PermissionRequest"]?[0]?.AsObject();
+        Require(permissionEntry?["hooks"]?[0]?["command"]?.GetValue<string>().Contains(tool.HookMarker) == true,
+            "Codex permission hooks must place CodeIsland first so it can return the approval decision.");
         Require(permissionEntry?["hooks"]?[0]?["timeout"]?.GetValue<int>() == 86400,
             "Codex hook timeout must allow a user decision to remain pending.");
         Require(manager.Install(tool, bridge).IsHealthy, "Repeated install must be idempotent.");

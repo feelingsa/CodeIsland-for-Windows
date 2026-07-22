@@ -27,9 +27,12 @@ public sealed class NativeHookInstaller
                 ["command"] = $"{registration.Command} --source {source} --event {eventName}",
                 ["timeout"] = KnownTools.TimeoutFor(tool, eventName)
             };
-            entries.Add(tool.Format is HookConfigurationFormat.Claude or HookConfigurationFormat.Cursor
+            var entry = tool.Format is HookConfigurationFormat.Claude or HookConfigurationFormat.Cursor
                 ? new JsonObject { ["matcher"] = "*", ["hooks"] = new JsonArray(commandHook) }
-                : new JsonObject { ["hooks"] = new JsonArray(commandHook) });
+                : new JsonObject { ["hooks"] = new JsonArray(commandHook) };
+            if (tool.Agent == CodeIsland.Core.AgentKind.Codex
+                && string.Equals(eventName, "PermissionRequest", StringComparison.Ordinal)) entries.Insert(0, entry);
+            else entries.Add(entry);
         }
         if (tool.Agent == CodeIsland.Core.AgentKind.Codex) root.Remove("codeIsland");
         Save(configPath, root);
