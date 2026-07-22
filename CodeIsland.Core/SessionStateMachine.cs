@@ -19,7 +19,13 @@ public sealed class SessionStateMachine
 
         _sessions.TryGetValue(agentEvent.SessionId, out var current);
         var startedAt = current?.StartedAt ?? agentEvent.Timestamp;
-        var state = ResolveState(agentEvent.Type, current?.State);
+        var preservesPendingApproval = IsPendingApprovalActivity(agentEvent, current);
+        var state = preservesPendingApproval
+            ? current!.State
+            : ResolveState(agentEvent.Type, current?.State);
+        var pendingEventId = state is SessionState.WaitingForPermission or SessionState.WaitingForAnswer
+            ? preservesPendingApproval ? current!.PendingEventId : agentEvent.EventId
+            : null;
 
         _sessions[agentEvent.SessionId] = new SessionSnapshot(
             agentEvent.SessionId,
@@ -31,13 +37,11 @@ public sealed class SessionStateMachine
             agentEvent.Title ?? current?.Title,
             ResolveMessage(agentEvent, current),
             ResolveActiveTool(agentEvent, current),
-            state is SessionState.WaitingForPermission or SessionState.WaitingForAnswer
-                ? agentEvent.EventId
-                : null,
+            pendingEventId,
             ResolveError(agentEvent, current),
             agentEvent.ProcessId ?? current?.ProcessId,
             agentEvent.TerminalKind ?? current?.TerminalKind,
-            ResolveExecutingTool(agentEvent, current));
+            ResolveExecutingTool(agentEvent, current, state));
 
         return true;
     }
@@ -111,14 +115,20 @@ public sealed class SessionStateMachine
         _ => current?.ActiveTool
     };
 
-    private static bool ResolveExecutingTool(AgentEvent value, SessionSnapshot? current) => value.Type switch
+    private static bool ResolveExecutingTool(AgentEvent value, SessionSnapshot? current, SessionState state) => value.Type switch
     {
-        AgentEventType.SessionStart or AgentEventType.ToolStart or AgentEventType.ToolEnd => true,
+        AgentEventType.SessionStart or AgentEventType.ToolStart or AgentEventType.ToolEnd =>
+            state is not (SessionState.WaitingForPermission or SessionState.WaitingForAnswer),
         AgentEventType.Heartbeat when value.ToolName == "background" => true,
         AgentEventType.Message or AgentEventType.SessionEnd or AgentEventType.Error
             or AgentEventType.PermissionRequest or AgentEventType.Question => false,
         _ => current?.IsExecutingTool ?? false
     };
+
+    private static bool IsPendingApprovalActivity(AgentEvent value, SessionSnapshot? current) =>
+        current?.State is SessionState.WaitingForPermission or SessionState.WaitingForAnswer
+        && value.Type == AgentEventType.ToolStart
+        && value.ToolName is "approval terminal" or "approval user input";
 
     private static void Validate(AgentEvent value)
     {

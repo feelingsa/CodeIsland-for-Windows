@@ -50,6 +50,24 @@ public sealed class SessionStateMachineTests
     }
 
     [Fact]
+    public void ApprovalActivityDoesNotOverwritePendingPermission()
+    {
+        var machine = new SessionStateMachine();
+        machine.Apply(Event("1", AgentEventType.SessionStart));
+        machine.Apply(Event("2", AgentEventType.PermissionRequest, text: "Allow command?"));
+        machine.Apply(Event("3", AgentEventType.ToolStart, text: "VS Code requires approval.", tool: "approval terminal"));
+
+        Assert.True(machine.TryGet("session-1", out var waiting));
+        Assert.Equal(SessionState.WaitingForPermission, waiting!.State);
+        Assert.Equal("2", waiting.PendingEventId);
+        Assert.False(waiting.IsExecutingTool);
+        Assert.Equal("VS Code requires approval.", waiting.LastMessage);
+
+        Assert.True(machine.ResolvePending("session-1", "2", Now.AddSeconds(4)));
+        Assert.Equal(SessionState.Running, machine.Sessions.Single().State);
+    }
+
+    [Fact]
     public void NewActivityRecoversFailedSessionAndClearsStaleError()
     {
         var machine = new SessionStateMachine();
