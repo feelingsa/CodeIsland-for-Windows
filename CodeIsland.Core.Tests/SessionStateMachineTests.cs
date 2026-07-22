@@ -68,6 +68,20 @@ public sealed class SessionStateMachineTests
     }
 
     [Fact]
+    public void LateOlderTranscriptEventCannotOverwriteLiveState()
+    {
+        var machine = new SessionStateMachine();
+        machine.Apply(Event("1", AgentEventType.SessionStart));
+        machine.Apply(Event("3", AgentEventType.PermissionRequest, text: "Current approval"));
+        machine.Apply(Event("2", AgentEventType.SessionStart, text: "Old session metadata"));
+
+        Assert.True(machine.TryGet("session-1", out var snapshot));
+        Assert.Equal(SessionState.WaitingForPermission, snapshot!.State);
+        Assert.Equal("3", snapshot.PendingEventId);
+        Assert.Equal("Current approval", snapshot.LastMessage);
+    }
+
+    [Fact]
     public void NewActivityRecoversFailedSessionAndClearsStaleError()
     {
         var machine = new SessionStateMachine();

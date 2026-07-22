@@ -18,6 +18,8 @@ public sealed class SessionStateMachine
         }
 
         _sessions.TryGetValue(agentEvent.SessionId, out var current);
+        if (current is not null && agentEvent.Timestamp < current.UpdatedAt)
+            return false;
         var startedAt = current?.StartedAt ?? agentEvent.Timestamp;
         var preservesPendingApproval = IsPendingApprovalActivity(agentEvent, current);
         var state = preservesPendingApproval
