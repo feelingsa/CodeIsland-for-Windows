@@ -401,9 +401,11 @@ Require(reasoningSummaryEvent is
         { Type: AgentEventType.Heartbeat, Text: "Inspecting session state / Preparing the update", ToolName: "background" },
     "Public Codex reasoning summaries must be displayed without exposing encrypted reasoning content.");
 var approvalEvent = CodexTranscriptParser.ParseLine(
-    "{\"timestamp\":\"2026-07-20T08:00:05Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call\",\"call_id\":\"approval-1\",\"name\":\"shell_command\",\"input\":\"{\\\"sandbox_permissions\\\":\\\"require_escalated\\\",\\\"justification\\\":\\\"Allow this command?\\\"}\"}}",
+    "{\"timestamp\":\"2026-07-20T08:00:05Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call\",\"call_id\":\"approval-1\",\"name\":\"shell_command\",\"input\":\"{\\\"command\\\":\\\"docker compose up -d\\\",\\\"sandbox_permissions\\\":\\\"require_escalated\\\",\\\"justification\\\":\\\"Allow this command?\\\"}\"}}",
     mcpContext);
-Require(approvalEvent is { Type: AgentEventType.ToolStart, ToolName: "approval terminal" },
+Require(approvalEvent is { Type: AgentEventType.ToolStart, ToolName: "approval terminal" }
+        && approvalEvent.Text?.Contains("Allow this command?", StringComparison.Ordinal) == true
+        && approvalEvent.Text.Contains("> docker compose up -d", StringComparison.Ordinal),
     "Any terminal escalation request must be marked for automatic panel expansion.");
 Require(PanelAttentionPolicy.RequiresExpansion(approvalEvent!),
     "Transcript terminal approval requests must expand the panel.");

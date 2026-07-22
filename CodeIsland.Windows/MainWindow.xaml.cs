@@ -154,6 +154,14 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
+    private void OnOpenInVscodeClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not WpfButton { Tag: SessionSnapshot snapshot }) return;
+        var activated = _terminalActivator.TryActivate(null, snapshot.WorkingDirectory);
+        if (!activated) activated = _workspaceLauncher.TryLaunch(snapshot.Agent, "vscode", snapshot.WorkingDirectory);
+        if (!activated) ToolTip = "VS Code could not be activated for this workspace.";
+    }
+
     private void OnSessionDragStart(object sender, MouseButtonEventArgs e)
     {
         if (IsInteractiveElement(e.OriginalSource as DependencyObject)) return;

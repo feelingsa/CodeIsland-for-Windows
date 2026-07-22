@@ -60,7 +60,7 @@ public static class CodexTranscriptParser
             "reasoning" => Create(context, Id(payload, timestamp), AgentEventType.Heartbeat,
                 timestamp, text: ReasoningSummary(payload), tool: "background"),
             "custom_tool_call" or "function_call" => Create(context, Id(payload, timestamp), ToolEventType(payload),
-                timestamp, tool: ToolName(payload)),
+                timestamp, text: TranscriptRequestText(payload), tool: ToolName(payload)),
             "custom_tool_call_output" or "function_call_output" => Create(context, Id(payload, timestamp), AgentEventType.ToolEnd,
                 timestamp, tool: "tool"),
             "message" when String(payload, "role") == "assistant" => Create(context, Id(payload, timestamp),
@@ -115,6 +115,34 @@ public static class CodexTranscriptParser
         string.Equals(String(payload, "name"), "request_user_input", StringComparison.OrdinalIgnoreCase)
             ? AgentEventType.Question
             : AgentEventType.ToolStart;
+
+    private static string? TranscriptRequestText(JsonElement payload)
+    {
+        var input = String(payload, "input", "arguments");
+        if (string.IsNullOrWhiteSpace(input)
+            || !Regex.IsMatch(input,
+                @"[\""']sandbox_permissions[\""']\s*:\s*[\""']require_escalated[\""']",
+                RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)) return null;
+
+        var justification = ExtractArgument(input, "justification");
+        var command = ExtractArgument(input, "command");
+        return string.Join(Environment.NewLine, new[]
+            {
+                "VS Code requires approval.",
+                justification,
+                string.IsNullOrWhiteSpace(command) ? null : $"> {command}"
+            }.Where(value => !string.IsNullOrWhiteSpace(value)));
+    }
+
+    private static string? ExtractArgument(string input, string name)
+    {
+        var match = Regex.Match(input,
+            $"[\\\"']{Regex.Escape(name)}[\\\"']\\s*:\\s*[\\\"'](?<value>(?:\\\\.|[^\\\"'])*)[\\\"']",
+            RegexOptions.CultureInvariant);
+        if (!match.Success) return null;
+        try { return JsonSerializer.Deserialize<string>($"\\\"{match.Groups["value"].Value}\\\""); }
+        catch (JsonException) { return match.Groups["value"].Value; }
+    }
 
     private static string? Truncate(string? text) => string.IsNullOrWhiteSpace(text)
         ? null
