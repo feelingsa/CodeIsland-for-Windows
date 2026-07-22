@@ -38,13 +38,25 @@ public sealed class DesktopSessionStore : INotifyPropertyChanged
         while (EventHistory.Count > _historyLimit) EventHistory.RemoveAt(EventHistory.Count - 1);
         var existing = Sessions.Select((value, index) => (value, index))
             .FirstOrDefault(pair => pair.value.SessionId == snapshot.SessionId);
-        if (existing.value is null) Sessions.Insert(0, snapshot);
-        else Sessions[existing.index] = snapshot;
+        var collectionChanged = false;
+        var displayChanged = existing.value is null || !HasVisibleChange(existing.value, snapshot);
+        if (existing.value is null)
+        {
+            Sessions.Insert(0, snapshot);
+            collectionChanged = true;
+        }
+        else if (displayChanged)
+        {
+            Sessions[existing.index] = snapshot;
+        }
         while (Sessions.Count > _maxVisibleSessions) Sessions.RemoveAt(Sessions.Count - 1);
-        OnPropertyChanged(nameof(SessionCount));
-        OnPropertyChanged(nameof(HasSessions));
-        OnPropertyChanged(nameof(IsIdle));
-        OnPropertyChanged(nameof(CurrentSession));
+        if (collectionChanged)
+        {
+            OnPropertyChanged(nameof(SessionCount));
+            OnPropertyChanged(nameof(HasSessions));
+            OnPropertyChanged(nameof(IsIdle));
+        }
+        if (displayChanged) OnPropertyChanged(nameof(CurrentSession));
         EventApplied?.Invoke(this, agentEvent);
     }
 
@@ -130,6 +142,9 @@ public sealed class DesktopSessionStore : INotifyPropertyChanged
         if (index >= 0) Sessions[index] = snapshot;
         OnPropertyChanged(nameof(CurrentSession));
     }
+
+    private static bool HasVisibleChange(SessionSnapshot previous, SessionSnapshot next) =>
+        previous with { UpdatedAt = next.UpdatedAt } != next;
 
     private sealed record PendingResponse(string SessionId, TaskCompletionSource<PipeMessage> Completion);
 

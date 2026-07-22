@@ -49,7 +49,6 @@ public partial class MainWindow : Window
         SoundButton.Content = settings.SoundEnabled ? "\uE767" : "\uE74F";
         SoundButton.ToolTip = settings.SoundEnabled ? "Mute notifications" : "Enable notification sounds";
         _sessions.EventApplied += OnEventApplied;
-        _sessions.PropertyChanged += OnSessionsChanged;
         DataContext = sessions;
         Loaded += (_, _) =>
         {
@@ -71,7 +70,6 @@ public partial class MainWindow : Window
         {
             _hotKeys?.Dispose();
             _sessions.EventApplied -= OnEventApplied;
-            _sessions.PropertyChanged -= OnSessionsChanged;
         };
         StateChanged += (_, _) => { if (WindowState == WindowState.Minimized) Hide(); };
         MouseLeftButtonDown += OnPanelMouseDown;
@@ -115,12 +113,6 @@ public partial class MainWindow : Window
         _answerDrafts.TryGetValue(eventId, out var answer);
         if (string.IsNullOrWhiteSpace(answer)) return;
         if (_sessions.Resolve(eventId, UserAction.Answer, answer)) _answerDrafts.Remove(eventId);
-    }
-
-    private void OnSessionsChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName is nameof(DesktopSessionStore.Sessions) or nameof(DesktopSessionStore.SessionCount))
-            Dispatcher.BeginInvoke(() => _sessionView?.Refresh());
     }
 
     private bool IsSessionVisible(object value) =>
@@ -335,13 +327,5 @@ public partial class MainWindow : Window
     {
         if (PanelAttentionPolicy.RequiresExpansion(agentEvent))
             ExpandPanel();
-        if (!SystemParameters.ClientAreaAnimation) return;
-        var easing = new QuadraticEase { EasingMode = EasingMode.EaseOut };
-        PanelScale.BeginAnimation(ScaleTransform.ScaleXProperty,
-            new DoubleAnimation(0.96, 1, TimeSpan.FromMilliseconds(180)) { EasingFunction = easing });
-        PanelScale.BeginAnimation(ScaleTransform.ScaleYProperty,
-            new DoubleAnimation(0.96, 1, TimeSpan.FromMilliseconds(180)) { EasingFunction = easing });
-        PanelBorder.BeginAnimation(OpacityProperty,
-            new DoubleAnimation(0.72, 1, TimeSpan.FromMilliseconds(180)) { EasingFunction = easing });
     }
 }
