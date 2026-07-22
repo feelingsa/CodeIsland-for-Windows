@@ -4,6 +4,9 @@ using System.Text.Json;
 using CodeIsland.Core;
 using CodeIsland.Ipc;
 
+Console.InputEncoding = new UTF8Encoding(false);
+Console.OutputEncoding = new UTF8Encoding(false);
+
 var realCodex = FindRealCodex();
 if (realCodex is null)
 {
