@@ -59,7 +59,7 @@ public static class CodexTranscriptParser
         {
             "reasoning" => Create(context, Id(payload, timestamp), AgentEventType.Heartbeat,
                 timestamp, text: ReasoningSummary(payload), tool: "background"),
-            "custom_tool_call" or "function_call" => Create(context, Id(payload, timestamp), AgentEventType.ToolStart,
+            "custom_tool_call" or "function_call" => Create(context, Id(payload, timestamp), ToolEventType(payload),
                 timestamp, tool: ToolName(payload)),
             "custom_tool_call_output" or "function_call_output" => Create(context, Id(payload, timestamp), AgentEventType.ToolEnd,
                 timestamp, tool: "tool"),
@@ -110,6 +110,11 @@ public static class CodexTranscriptParser
             return "approval terminal";
         return NestedMcpTool(payload) ?? name;
     }
+
+    private static AgentEventType ToolEventType(JsonElement payload) =>
+        string.Equals(String(payload, "name"), "request_user_input", StringComparison.OrdinalIgnoreCase)
+            ? AgentEventType.Question
+            : AgentEventType.ToolStart;
 
     private static string? Truncate(string? text) => string.IsNullOrWhiteSpace(text)
         ? null

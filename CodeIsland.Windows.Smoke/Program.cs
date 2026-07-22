@@ -405,6 +405,8 @@ var approvalEvent = CodexTranscriptParser.ParseLine(
     mcpContext);
 Require(approvalEvent is { Type: AgentEventType.ToolStart, ToolName: "approval terminal" },
     "Any terminal escalation request must be marked for automatic panel expansion.");
+Require(!PanelAttentionPolicy.RequiresExpansion(approvalEvent!),
+    "Read-only transcript terminal approval hints must not expand the panel.");
 var ordinaryTerminalEvent = CodexTranscriptParser.ParseLine(
     "{\"timestamp\":\"2026-07-20T08:00:05Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call\",\"call_id\":\"ordinary-terminal\",\"name\":\"exec\",\"input\":\"const r = await tools.shell_command({\\\"command\\\":\\\"rg require_escalated sandbox_permissions justification .\\\",\\\"sandbox_permissions\\\":\\\"use_default\\\"});\"}}",
     mcpContext);
@@ -413,8 +415,10 @@ Require(ordinaryTerminalEvent is { Type: AgentEventType.ToolStart, ToolName: "ex
 var inputEvent = CodexTranscriptParser.ParseLine(
     "{\"timestamp\":\"2026-07-20T08:00:06Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call\",\"call_id\":\"approval-2\",\"name\":\"request_user_input\",\"input\":\"{}\"}}",
     mcpContext);
-Require(inputEvent is { Type: AgentEventType.ToolStart, ToolName: "approval user input" },
-    "Codex user-input requests must be marked for automatic panel expansion.");
+Require(inputEvent is { Type: AgentEventType.Question, ToolName: "approval user input" },
+    "Codex user-input requests must be parsed as actionable questions.");
+Require(PanelAttentionPolicy.RequiresExpansion(inputEvent!),
+    "Codex user-input requests must expand the panel.");
 var commandEvent = CodexTranscriptParser.ParseLine(
     "{\"timestamp\":\"2026-07-20T08:00:07Z\",\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call\",\"call_id\":\"command-1\",\"name\":\"exec\",\"input\":\"const r = await tools.shell_command({\\\"command\\\":\\\"dotnet test CodeIsland.Core.Tests\\\",\\\"workdir\\\":\\\"E:\\\\\\\\Demo\\\"});\"}}",
     mcpContext);
