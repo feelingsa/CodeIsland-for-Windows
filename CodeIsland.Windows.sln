@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeIsland.Ipc", "CodeIslan
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeIsland.Bridge", "CodeIsland.Bridge\CodeIsland.Bridge.csproj", "{DF4B2734-FABF-4A7F-8516-AE9ADDD8CBCC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeIsland.CodexProxy", "CodeIsland.CodexProxy\CodeIsland.CodexProxy.csproj", "{0E89B602-C7F3-4D07-8DF1-76122F3DDE83}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeIsland.Hooks", "CodeIsland.Hooks\CodeIsland.Hooks.csproj", "{C2E3E592-6165-4838-B8F9-3B219A020393}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeIsland.Hooks.Cli", "CodeIsland.Hooks.Cli\CodeIsland.Hooks.Cli.csproj", "{31E0206B-837A-4A31-AC9B-9AD798204D4F}"
@@ -52,6 +54,10 @@ Global
 		{DF4B2734-FABF-4A7F-8516-AE9ADDD8CBCC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DF4B2734-FABF-4A7F-8516-AE9ADDD8CBCC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DF4B2734-FABF-4A7F-8516-AE9ADDD8CBCC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0E89B602-C7F3-4D07-8DF1-76122F3DDE83}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0E89B602-C7F3-4D07-8DF1-76122F3DDE83}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0E89B602-C7F3-4D07-8DF1-76122F3DDE83}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0E89B602-C7F3-4D07-8DF1-76122F3DDE83}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C2E3E592-6165-4838-B8F9-3B219A020393}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C2E3E592-6165-4838-B8F9-3B219A020393}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C2E3E592-6165-4838-B8F9-3B219A020393}.Release|Any CPU.ActiveCfg = Release|Any CPU

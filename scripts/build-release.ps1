@@ -8,8 +8,9 @@ $root = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 $artifacts = [System.IO.Path]::GetFullPath((Join-Path $root "artifacts"))
 $staging = [System.IO.Path]::GetFullPath((Join-Path $artifacts "staging"))
 $bridgeStaging = [System.IO.Path]::GetFullPath((Join-Path $artifacts "bridge"))
+$proxyStaging = [System.IO.Path]::GetFullPath((Join-Path $artifacts "codex-proxy"))
 
-foreach ($target in @($staging, $bridgeStaging)) {
+foreach ($target in @($staging, $bridgeStaging, $proxyStaging)) {
     if (-not $target.StartsWith($artifacts, [System.StringComparison]::OrdinalIgnoreCase)) {
         throw "Refusing to clean a path outside the artifacts directory: $target"
     }
@@ -18,6 +19,7 @@ foreach ($target in @($staging, $bridgeStaging)) {
 
 New-Item -ItemType Directory -Path $staging -Force | Out-Null
 New-Item -ItemType Directory -Path $bridgeStaging -Force | Out-Null
+New-Item -ItemType Directory -Path $proxyStaging -Force | Out-Null
 
 dotnet publish (Join-Path $root "CodeIsland.Windows\CodeIsland.Windows.csproj") `
     -c $Configuration -r $Runtime --self-contained false -o $staging
@@ -27,8 +29,16 @@ dotnet publish (Join-Path $root "CodeIsland.Bridge\CodeIsland.Bridge.csproj") `
     -c $Configuration -r $Runtime --self-contained false -o $bridgeStaging
 if ($LASTEXITCODE -ne 0) { throw "Bridge publish failed with exit code $LASTEXITCODE" }
 
+dotnet publish (Join-Path $root "CodeIsland.CodexProxy\CodeIsland.CodexProxy.csproj") `
+    -c $Configuration -r $Runtime --self-contained false -o $proxyStaging
+if ($LASTEXITCODE -ne 0) { throw "Codex proxy publish failed with exit code $LASTEXITCODE" }
+
 foreach ($name in @("CodeIsland.Bridge.exe", "CodeIsland.Bridge.dll", "CodeIsland.Bridge.deps.json", "CodeIsland.Bridge.runtimeconfig.json")) {
     Copy-Item -LiteralPath (Join-Path $bridgeStaging $name) -Destination (Join-Path $staging $name) -Force
+}
+
+foreach ($name in @("CodeIsland.CodexProxy.exe", "CodeIsland.CodexProxy.dll", "CodeIsland.CodexProxy.deps.json", "CodeIsland.CodexProxy.runtimeconfig.json")) {
+    Copy-Item -LiteralPath (Join-Path $proxyStaging $name) -Destination (Join-Path $staging $name) -Force
 }
 
 $version = "0.1.0"
