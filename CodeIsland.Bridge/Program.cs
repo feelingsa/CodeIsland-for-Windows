@@ -22,6 +22,7 @@ else if (mode == "send" && args.Length >= 2)
     var input = stdin ? await Console.In.ReadToEndAsync() : await File.ReadAllTextAsync(file
         ?? throw new ArgumentException("send requires --stdin or an event JSON file."));
     var agentEvent = ParseEvent(input, source, eventName);
+    HookLog($"Received source={source ?? "-"} event={eventName ?? "-"} parsed={agentEvent.Type} session={agentEvent.SessionId}.");
     await using var client = new PipeClient(userSid);
     await client.ConnectWithRetryAsync(3, TimeSpan.FromSeconds(1), TimeSpan.FromMilliseconds(150));
     var response = await client.SendAsync(
@@ -29,6 +30,7 @@ else if (mode == "send" && args.Length >= 2)
         agentEvent.Type is AgentEventType.PermissionRequest or AgentEventType.Question
             ? TimeSpan.FromHours(8)
             : TimeSpan.FromSeconds(3));
+    HookLog($"Response type={response.Type} action={response.Action?.ToString() ?? "-"} event={agentEvent.EventId}.");
     Console.WriteLine(HookResponse(response, agentEvent, source));
 }
 else if (mode == "self-test")
@@ -154,4 +156,18 @@ static string HookResponse(PipeMessage response, AgentEvent agentEvent, string? 
             decision = new { behavior }
         }
     });
+}
+
+static void HookLog(string message)
+{
+    try
+    {
+        var directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "CodeIsland", "logs");
+        Directory.CreateDirectory(directory);
+        File.AppendAllText(Path.Combine(directory, "bridge-hooks.log"),
+            $"{DateTimeOffset.UtcNow:O} {message}{Environment.NewLine}");
+    }
+    catch (IOException) { }
+    catch (UnauthorizedAccessException) { }
 }
